@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>أدمن – عرض بيانات حساب</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+      --card:#fff; --bg:#f6f7f9; --radius:16px; --top:62px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
+    /* شريط علوي */
+    .topbar{
+      position:fixed; inset-inline:0; top:0; height:var(--top); background:var(--card);
+      border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:10;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .brand .dot{width:14px;height:14px;border-radius:50%;background:var(--accent)}
+    .btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+    .wrap{min-height:100dvh; display:flex; align-items:flex-start; justify-content:center; padding:calc(var(--top) + 22px) 14px 28px}
+    .card{
+      width:min(780px,95vw); background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      box-shadow:0 10px 24px rgba(0,0,0,.06); padding:18px; display:grid; gap:14px;
+    }
+    h1{margin:0; font-size:22px}
+    .sub{margin:0; color:var(--muted); font-size:14px}
+
+    .grid{display:grid; gap:12px; grid-template-columns:1fr 180px}
+    @media (max-width:640px){ .grid{grid-template-columns:1fr} }
+
+    .field{display:grid; gap:8px}
+    .label{font-weight:900; font-size:13px}
+    .input{
+      padding:12px; border:1px solid var(--line); border-radius:12px; background:#fafafa; font-weight:700; width:100%;
+    }
+    .input:focus{outline:none; border-color:#cdd5e0; background:#fff}
+    .input.error{border-color:#ef4444; background:#fff1f1}
+
+    .btn-solid{padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:#fff; font-weight:900; cursor:pointer}
+    .btn-solid.primary{background:var(--accent); border-color:var(--accent); color:#111}
+
+    /* قائمة النتائج (لو فيه أكثر من حساب بنفس الاسم) */
+    .list{display:none; border:1px dashed #d7dbdf; border-radius:14px; padding:10px; background:#fafafa}
+    .row{display:grid; grid-template-columns:1fr 1fr 1fr 90px; gap:8px; align-items:center; padding:8px; border-bottom:1px solid #edf0f3}
+    .row:last-child{border-bottom:none}
+    .row .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+
+    /* نتيجة مفصلة */
+    .result{display:none; border:1px dashed #d7dbdf; border-radius:14px; padding:14px; background:#fafafa}
+    .ok-title{display:flex; align-items:center; gap:8px; font-weight:900}
+    .ok-dot{width:10px;height:10px;border-radius:50%;background:#22c55e}
+    .kv{display:grid; grid-template-columns:160px 1fr; gap:8px 12px; margin-top:10px}
+    .kv .k{color:#475569; font-weight:800; font-size:13px}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .share{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
+
+    /* توست صغير أسود */
+    .toast{
+      position:fixed; bottom:22px; left:50%; transform:translateX(-50%) scale(.96);
+      background:rgba(17,17,17,.92); color:#fff; padding:8px 12px; border-radius:10px; font-weight:800; font-size:12px;
+      opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:30;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
+  </style>
+  
+   <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#BBCF38">
+  
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span><span>أدمن – عرض بيانات حساب</span></div>
+    <button class="btn" id="backBtn" title="رجوع">⟵</button>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div>
+        <h1>ابحث عن حساب</h1>
+        <p class="sub">اكتب <b>الاسم الرباعي</b> تمامًا كما هو محفوظ في القاعدة، ثم اضغط بحث.</p>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label class="label" for="fullName">الاسم الرباعي</label>
+          <input id="fullName" class="input" type="text" placeholder="مثال: م....م....م....م">
+        </div>
+        <div style="display:flex; gap:8px; align-items:end;">
+          <button class="btn-solid" id="resetBtn" type="button">تفريغ</button>
+          <button class="btn-solid primary" id="searchBtn" type="button">بحث</button>
+        </div>
+      </div>
+
+      <!-- لو فيه أكثر من نتيجة لنفس الاسم -->
+      <div class="list" id="listBox">
+        <div class="row" style="font-weight:900;background:#fff;border-radius:10px">
+          <div>الاسم</div><div>اسم المستخدم</div><div>رقم الحساب</div><div>إجراء</div>
+        </div>
+        <div id="listRows"></div>
+      </div>
+
+      <!-- النتيجة المفصلة -->
+      <div class="result" id="resultBox">
+        <div class="ok-title"><span class="ok-dot"></span>تم العثور على الحساب</div>
+        <div class="kv">
+          <div class="k">الاسم</div><div id="r_name"></div>
+          <div class="k">اسم المستخدم</div><div id="r_username" class="mono"></div>
+          <div class="k">رقم الهاتف</div><div id="r_phone" class="mono"></div>
+          <div class="k">رقم الحساب</div><div id="r_accountId" class="mono"></div>
+          <div class="k">رمز الدعوة</div><div id="r_invite" class="mono"></div>
+          <div class="k">كلمة المرور</div><div id="r_password" class="mono"></div>
+          <div class="k">الرصيد</div><div id="r_balance" class="mono"></div>
+          <div class="k">العقد المقفل</div><div id="r_locked" class="mono"></div>
+          <div class="k">التسجيل</div><div id="r_created" class="mono"></div>
+        </div>
+        <div class="share">
+          <button class="btn-solid" id="copyBtn" type="button">نسخ</button>
+          <a class="btn-solid" id="waBtn" target="_blank" rel="noopener">ارسال واتساب</a>
+          <a class="btn-solid" id="tgBtn" target="_blank" rel="noopener">ارسال تيليجرام</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- ===== Firebase (Compat CDN) ===== -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+    // إعدادات مشروعك نفسها
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+      authDomain: "dynex-f4486.firebaseapp.com",
+      databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+      projectId: "dynex-f4486",
+      storageBucket: "dynex-f4486.firebasestorage.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // أدوات واجهة
+    const $ = s => document.querySelector(s);
+    function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1400); }
+
+    $("#backBtn").addEventListener('click', ()=>{ history.length>1 ? history.back() : location.href='index1.html'; });
+    $("#resetBtn").addEventListener('click', ()=>{
+      $("#fullName").value=''; $("#listBox").style.display='none'; $("#resultBox").style.display='none';
+    });
+    $("#searchBtn").addEventListener('click', search);
+    $("#fullName").addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); search(); } });
+
+    // جلب حسب الاسم (قد يرجع أكثر من صف)
+    async function fetchByName(name){
+      const n = (name||'').trim();
+      if(!n) return [];
+      try{
+        const snap = await db.ref('users').orderByChild('name').equalTo(n).get();
+        if(!snap.exists()) return [];
+        const obj = snap.val() || {};
+        // رجّع مصفوفة {id, ...data}
+        return Object.entries(obj).map(([id, v])=>({...v, _id:id}));
+      }catch(e){
+        console.warn('SDK query failed → fallback REST', e?.message||e);
+        try{
+          const res = await fetch(firebaseConfig.databaseURL + '/users.json');
+          const all = await res.json() || {};
+          return Object.entries(all)
+            .filter(([id,v])=> String(v?.name||'').trim() === n)
+            .map(([id,v])=> ({...v, _id:id}));
+        }catch(e2){
+          console.warn('REST fetch failed', e2?.message||e2);
+          return [];
+        }
+      }
+    }
+
+    // رسم صف واحد بالنتيجة التفصيلية
+    function renderDetail(u){
+      $("#resultBox").style.display = 'block';
+      $("#r_name").textContent      = u.name || '—';
+      $("#r_username").textContent  = u.username || '—';
+      $("#r_phone").textContent     = u.phone || '—';
+      $("#r_accountId").textContent = u.accountId || '—';
+      $("#r_invite").textContent    = u.inviteCode || '—';
+      $("#r_password").textContent  = u.password || '—';
+      $("#r_balance").textContent   = (u.balance ?? 0);
+      $("#r_locked").textContent    = (u.lockedAmount ?? 0);
+      $("#r_created").textContent   = u.createdAt ? new Date(u.createdAt).toLocaleString() : '—';
+
+      // نص المشاركة
+      const shareText =
+`تم إنشاء حسابك في Dynex ✅
+
+الاسم: ${u.name || '—'}
+اسم المستخدم: ${u.username || '—'}
+رقم الحساب: ${u.accountId || '—'}
+رقم الهاتف: ${u.phone || '—'}
+رمز الدعوة: ${u.inviteCode || '—'}
+كلمة المرور: ${u.password || '—'}`;
+
+      $("#copyBtn").onclick = async ()=>{
+        try{ await navigator.clipboard.writeText(shareText); toast('تم النسخ'); }catch{ toast('تعذّر النسخ'); }
+      };
+      $("#waBtn").href = 'https://wa.me/?text=' + encodeURIComponent(shareText);
+      $("#tgBtn").href = 'https://t.me/share/url?url=' + encodeURIComponent(location.origin) + '&text=' + encodeURIComponent(shareText);
+    }
+
+    // رسم قائمة مختصرة عندما توجد نتائج متعددة
+    function renderList(arr){
+      const box = $("#listBox");
+      const host = $("#listRows");
+      host.innerHTML = '';
+      arr.forEach(u=>{
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div>${u.name || '—'}</div>
+          <div class="mono">${u.username || '—'}</div>
+          <div class="mono">${u.accountId || '—'}</div>
+          <div><button class="btn-solid" data-id="${u._id}">عرض</button></div>
+        `;
+        host.appendChild(row);
+      });
+      box.style.display = arr.length > 1 ? 'block' : 'none';
+
+      // زر "عرض" لكل سطر
+      host.querySelectorAll('button[data-id]').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const id = b.dataset.id;
+          const u = arr.find(x=>x._id===id);
+          if(u) renderDetail(u);
+          window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+        });
+      });
+    }
+
+    async function search(){
+      const name = $("#fullName").value.trim();
+      if(!name){ $("#fullName").classList.add('error'); toast('أدخل الاسم الرباعي'); return; }
+      $("#fullName").classList.remove('error');
+
+      $("#listBox").style.display='none';
+      $("#resultBox").style.display='none';
+
+      $("#searchBtn").disabled = true;
+      const prev = $("#searchBtn").textContent;
+      $("#searchBtn").textContent = 'جارٍ البحث...';
+
+      try{
+        const matches = await fetchByName(name);
+        if(matches.length === 0){ toast('لا يوجد مستخدم بهذا الاسم'); return; }
+
+        // إن كان واحد فقط، اعرضه مباشرة
+        if(matches.length === 1){
+          renderDetail(matches[0]);
+        }else{
+          toast(`عدد النتائج: ${matches.length}`);
+          renderList(matches);
+          // اعرض أول واحد أيضًا تفصيليًا
+          renderDetail(matches[0]);
+        }
+      }catch(err){
+        console.error(err);
+        toast('تعذّر الاتصال بالقاعدة');
+      }finally{
+        $("#searchBtn").disabled = false;
+        $("#searchBtn").textContent = prev;
+      }
+    }
+  </script>
+  
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(reg => console.log("✔ Service Worker registered"))
+      .catch(err => console.error("❌ Service Worker failed:", err));
+  }
+</script>
+  
+</body>
+</html>

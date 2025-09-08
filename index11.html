@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>اعتراضات – لوحة الشركة</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
+
+  <style>
+    :root{ --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb; --bg:#f7f8fa; --card:#fff; --top:56px; --ok:#16a34a; --no:#ef4444; }
+    *{box-sizing:border-box} body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
+    .topbar{position:fixed; inset-inline:0; top:0; height:var(--top); background:var(--card); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 12px; z-index:10;}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900} .dot{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+    .btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+    .ms{font-family:'Material Symbols Rounded'}
+    .wrap{padding:calc(var(--top) + 14px) 10px 18px; max-width:1100px; margin:0 auto}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px}
+    .tools{display:flex; gap:8px; align-items:center; margin:0 0 12px; flex-wrap:wrap}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; font-weight:800; font-size:12px}
+    .list{display:grid; gap:8px}
+    .row{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fff; font-weight:700; font-size:14px; flex-wrap:wrap;}
+    .main{display:flex; gap:8px; align-items:center; min-width:280px; flex:1 1 560px; overflow:hidden; white-space:nowrap}
+    .name{max-width:20ch; overflow:hidden; text-overflow:ellipsis} .id{color:var(--muted)}
+    .amt{font-weight:900} .time{color:var(--muted); font-weight:700} .sep{opacity:.5}
+    .badge{padding:6px 10px; border-radius:999px; font-weight:900; font-size:12px}
+    .bd-pend{background:#fff7ed; color:#7c2d12} .bd-ok{background:#dcfce7; color:#166534}
+    .actions{display:flex; gap:8px}
+    .chip{padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; font-weight:800; cursor:pointer}
+    .ok{background:var(--ok); color:#fff; border-color:var(--ok)}
+  </style>
+  
+   <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#BBCF38">
+  
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span><span>نظام الشركة</span></div>
+    <div style="display:flex; gap:8px; align-items:center">
+      <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
+      <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="tools">
+        <div id="live" class="pill"><span class="ms">online_prediction</span><span>متصل</span></div>
+        <div class="pill" title="فلتر النوع">
+          <span class="ms">filter_list</span>
+          <select id="fltType" style="border:none;outline:none;font-weight:800;background:transparent">
+            <option value="all">الكل</option>
+            <option value="withdraw">سحب</option>
+            <option value="deposit">إيداع</option>
+            <option value="balance">الرصيد</option>
+            <option value="freeze">تعليق</option>
+            <option value="change">تغيير رقم</option>
+            <option value="other">غير ذلك</option>
+          </select>
+        </div>
+        <div class="pill" title="الحالة">
+          <span class="ms">info</span>
+          <select id="fltStatus" style="border:none;outline:none;font-weight:800;background:transparent">
+            <option value="all">الكل</option>
+            <option value="pending">قيد المراجعة</option>
+            <option value="resolved">مكتمل</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="list" class="list"></div>
+      <div id="empty" class="row" style="justify-content:center; color:#6b7280; display:none">لا توجد اعتراضات.</div>
+    </section>
+  </main>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+  (function(){
+    const $=s=>document.querySelector(s);
+    $("#backBtn").addEventListener('click', ()=>{ if(history.length>1) history.back(); else window.location.replace('/admin/core/dashboard.html'); });
+    $("#refreshBtn").addEventListener('click', ()=> pull(true));
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+      authDomain: "dynex-f4486.firebaseapp.com",
+      databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+      projectId: "dynex-f4486",
+      storageBucket: "dynex-f4486.firebasestorage.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const list=$("#list"), empty=$("#empty"), live=$("#live"), fltType=$("#fltType"), fltStatus=$("#fltStatus");
+    let cache=[];
+
+    function setLive(ok){ live.style.background = ok ? '#f0fdf4' : '#fff1f1'; live.style.borderColor = ok ? '#dcfce7' : '#ffe4e6';
+      live.querySelector('.ms').textContent = ok ? 'online_prediction' : 'report_gmailerrorred';
+      live.lastChild.textContent = ok ? 'متصل' : 'غير متصل'; }
+
+    function rowEl(x){
+      const d=document.createElement('div'); d.className='row';
+      const badge = x.status==='resolved' ? '<span class="badge bd-ok">مكتمل</span>' : '<span class="badge bd-pend">قيد المراجعة</span>';
+      d.innerHTML = `
+        <div class="main">
+          <span class="name">${x.name}</span>
+          <span class="id">(${x.phone})</span>
+          <span class="sep">·</span>
+          <span>${x.typeLabel}</span>
+          <span class="sep">·</span>
+          <span class="time">${x.when}</span>
+          <span class="sep">·</span>
+          ${badge}
+        </div>
+        <div class="actions">
+          ${x.status==='pending' ? `<button class="chip ok" data-id="${x.id}" data-act="resolve">تمييز كمكتمل</button>` : `<button class="chip" data-id="${x.id}" data-act="reopen">إرجاع للمراجعة</button>`}
+        </div>
+      `;
+      d.querySelector('[data-act="resolve"]')?.addEventListener('click', ()=> db.ref('appeals/'+x.id).update({status:'resolved'}));
+      d.querySelector('[data-act="reopen"]')?.addEventListener('click', ()=> db.ref('appeals/'+x.id).update({status:'pending'}));
+      return d;
+    }
+
+    function typeLabel(t){
+      return t==='withdraw'?'مشكلة سحب': t==='deposit'?'مشكلة إيداع': t==='balance'?'خطأ في الرصيد': t==='freeze'?'النظام يعلق': t==='change'?'تغيير رقم': 'غير ذلك';
+    }
+
+    function render(){
+      list.innerHTML='';
+      let rows = cache.slice();
+      const ft = fltType.value, fs = fltStatus.value;
+      if(ft!=='all') rows = rows.filter(r=> r.type===ft);
+      if(fs!=='all') rows = rows.filter(r=> r.status===fs);
+      rows.sort((a,b)=> (b.created_ts||0) - (a.created_ts||0) || (b.created_at||'').localeCompare(a.created_at||''));
+      if(!rows.length){ empty.style.display='flex'; return; }
+      empty.style.display='none';
+      rows.forEach(x=> list.appendChild(rowEl(x)));
+    }
+
+    function adapt(id, v){
+      const ts = v.created_ts || 0;
+      const when = v.created_at ? new Date(v.created_at).toLocaleString() : (ts ? new Date(ts).toLocaleString() : '-');
+      return { id, uid:v.uid||'', name:v.name||'—', phone:v.phone||'—', type:v.type||'other', typeLabel:typeLabel(v.type||'other'), status:v.status||'pending', created_ts:ts, created_at:v.created_at||'', when };
+    }
+
+    let firstBind=false;
+    function bind(){
+      setLive(true);
+      db.ref('appeals').on('value', snap=>{
+        const obj=snap.val()||{};
+        cache = Object.keys(obj).map(id=> adapt(id,obj[id]||{}));
+        render();
+        if(!firstBind){ firstBind=true; }
+      }, e=> setLive(false));
+    }
+
+    function pull(showToast){
+      // (مع on('value') ما نحتاج pull حقيقي — بس نعيد الرسم)
+      render();
+      if(showToast){ /* بإمكانك إضافة Toast هنا لو تحب */ }
+    }
+
+    fltType.addEventListener('change', render);
+    fltStatus.addEventListener('change', render);
+
+    bind();
+  })();
+  </script>
+  
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(reg => console.log("✔ Service Worker registered"))
+      .catch(err => console.error("❌ Service Worker failed:", err));
+  }
+</script>
+  
+  
+</body>
+</html>

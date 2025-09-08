@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>إيداع من حساب إلى حساب (لوحة الشركة)</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+      --bg:#f7f8fa; --card:#fff; --top:56px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
+
+    /* الشريط العلوي */
+    .topbar{
+      position:fixed; inset-inline:0; top:0; height:var(--top); background:var(--card);
+      border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 12px; z-index:10;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .dot{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+    .btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
+    .ms{font-family:'Material Symbols Rounded'}
+
+    /* المحتوى */
+    .wrap{padding:calc(var(--top) + 14px) 10px 18px; max-width:1100px; margin:0 auto}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px}
+
+    /* أدوات */
+    .tools{display:flex; gap:8px; align-items:center; margin:0 0 12px; flex-wrap:wrap}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; font-weight:800; font-size:12px}
+    .live-ok{background:#f0fdf4; border-color:#dcfce7}
+    .live-bad{background:#fff1f1; border-color:#ffe4e6}
+
+    /* القائمة */
+    .list{display:grid; gap:8px}
+    .row{
+      display:flex; align-items:center; gap:10px; padding:10px 12px;
+      border:1px solid var(--line); border-radius:12px; background:#fff;
+      font-weight:700; font-size:14px; flex-wrap:wrap;
+    }
+    .main{display:flex; gap:8px; align-items:center; min-width:280px; flex:1 1 520px; overflow:hidden; white-space:nowrap}
+    .who{display:flex; align-items:center; gap:8px; overflow:hidden}
+    .name{max-width:20ch; overflow:hidden; text-overflow:ellipsis}
+    .id{color:var(--muted)}
+    .arrow{display:inline-flex; align-items:center; gap:4px; color:#334155}
+    .amt{font-weight:900}
+    .time{color:var(--muted); font-weight:700}
+    .sep{opacity:.5}
+
+    .empty{padding:14px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:10px}
+    .toast{
+      position:fixed; bottom:18px; left:50%; transform:translateX(-50%) scale(.96);
+      background:rgba(17,17,17,.92); color:#fff; padding:8px 12px; border-radius:10px; font-weight:800; font-size:12px;
+      opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:30;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
+  </style>
+  
+   <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#BBCF38">
+  
+</head>
+<body>
+
+  <!-- الشريط العلوي -->
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span><span>نظام الشركة</span></div>
+    <div style="display:flex; gap:8px; align-items:center">
+      <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
+      <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
+    </div>
+  </header>
+
+  <!-- المحتوى -->
+  <main class="wrap">
+    <section class="card">
+      <div class="tools">
+        <div id="live" class="pill live-ok"><span class="ms">online_prediction</span><span>متصل</span></div>
+        <div class="pill" title="تحديث لحظي"><span class="ms">bolt</span><span>Realtime</span></div>
+      </div>
+
+      <div id="list" class="list"></div>
+      <div id="empty" class="empty" style="display:none">لا توجد عمليات إيداع بين الحسابات.</div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- ✅ Firebase (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+  (function(){
+    const $ = s=>document.querySelector(s);
+
+    /* ===== عودة وتحديث ===== */
+    $("#backBtn").addEventListener('click', ()=>{ if(history.length>1) history.back(); else window.location.replace('/admin/core/dashboard.html'); });
+    function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200); }
+    function setLive(ok){
+      const live = $("#live");
+      live.className = "pill " + (ok ? "live-ok" : "live-bad");
+      live.querySelector('.ms').textContent = ok ? 'online_prediction' : 'report_gmailerrorred';
+      live.lastChild.textContent = ok ? 'متصل' : 'غير متصل';
+    }
+
+    /* ===== Firebase ===== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+      authDomain: "dynex-f4486.firebaseapp.com",
+      databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+      projectId: "dynex-f4486",
+      storageBucket: "dynex-f4486.firebasestorage.app"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    /* ===== كاش أسماء وأرقام الحساب ===== */
+    const userCache = new Map(); // uid -> {name, accountId}
+    async function getProfile(uid){
+      if(!uid) return {name:'—', accountId:'—'};
+      if(userCache.has(uid)) return userCache.get(uid);
+      try{
+        const snap = await db.ref('users/'+uid).get();
+        const v = snap.val()||{};
+        const prof = { name: v.name || v.username || '—', accountId: v.accountId || v.id || '—' };
+        userCache.set(uid, prof);
+        return prof;
+      }catch(_){ return {name:'—', accountId:'—'}; }
+    }
+
+    /* ===== تحويل شكل السجل ===== */
+    function normalize(raw, key, parentUid){
+      // مرونة بأسماء الحقول
+      const fromUid = raw.fromUid || raw.from_uid || raw.senderUid || raw.sender_uid || raw.sender_id || parentUid || null;
+      const toUid   = raw.toUid   || raw.to_uid   || raw.receiverUid || raw.receiver_uid || raw.receiver_id || null;
+
+      const fromId  = raw.fromId || raw.from_id || raw.fromAccountId || raw.sender_account || raw.sender_acc || null;
+      const toId    = raw.toId   || raw.to_id   || raw.toAccountId   || raw.receiver_account || raw.receiver_acc || null;
+
+      const fromName= raw.fromName || raw.from_name || raw.sender_name || raw.username_from || null;
+      const toName  = raw.toName   || raw.to_name   || raw.receiver_name || raw.username_to || null;
+
+      const amount  = Number(raw.amount ?? raw.amt ?? 0);
+      const ts      = raw.createdAt || raw.created_at || raw.timestamp || null;
+
+      return {
+        id: key || raw.id || raw.ref || '',
+        fromUid, toUid,
+        fromId, toId,
+        fromName, toName,
+        amt: amount,
+        tsISO: ts ? new Date(ts).toISOString() : '',
+        tsLocal: ts ? new Date(ts).toLocaleString() : ''
+      };
+    }
+
+    /* ===== قراءة من المسار (مرن لمستويين) =====
+       يدعم:
+       1) accountDeposits/{depositId} -> record
+       2) accountDeposits/{uid}/{depositId} -> record
+    */
+    const listRef = db.ref('accountDeposits');
+    let lastRows = [];
+
+    function collectFromSnapshot(snap){
+      const rows = [];
+      snap.forEach(l1=>{
+        const v1 = l1.val();
+        const looksLikeRecord = v1 && (v1.amount!=null || v1.fromId || v1.toId || v1.from_uid || v1.to_uid);
+        if(looksLikeRecord){
+          rows.push( normalize(v1, l1.key, null) );
+        }else{
+          l1.forEach(l2=>{
+            rows.push( normalize(l2.val()||{}, l2.key, l1.key) );
+          });
+        }
+      });
+      return rows;
+    }
+
+    async function enrichRows(rows){
+      const needFrom = rows.filter(r => (!r.fromName || !r.fromId) && r.fromUid).map(r=>r.fromUid);
+      const needTo   = rows.filter(r => (!r.toName   || !r.toId)   && r.toUid).map(r=>r.toUid);
+      const need = Array.from(new Set([...needFrom, ...needTo].filter(Boolean)));
+      await Promise.all( need.map(uid=>getProfile(uid)) );
+      // أعِد ملء البيانات الناقصة من الكاش
+      return rows.map(r=>{
+        if((!r.fromName || !r.fromId) && r.fromUid){
+          const p = userCache.get(r.fromUid) || {};
+          r.fromName = r.fromName || p.name || '—';
+          r.fromId   = r.fromId   || p.accountId || '—';
+        }
+        if((!r.toName || !r.toId) && r.toUid){
+          const p = userCache.get(r.toUid) || {};
+          r.toName = r.toName || p.name || '—';
+          r.toId   = r.toId   || p.accountId || '—';
+        }
+        return r;
+      });
+    }
+
+    function fmtAmt(n){ return Number(n||0).toFixed(2); }
+
+    function rowEl(x){
+      const d = document.createElement('div');
+      d.className = 'row';
+      d.innerHTML = `
+        <div class="main">
+          <span class="who">
+            <span class="name" title="${x.fromName||'—'}">${x.fromName||'—'}</span>
+            <span class="id"   title="${x.fromId  ||'—'}">(${x.fromId||'—'})</span>
+          </span>
+          <span class="arrow"><span class="ms">arrow_back</span> إلى</span>
+          <span class="who">
+            <span class="name" title="${x.toName||'—'}">${x.toName||'—'}</span>
+            <span class="id"   title="${x.toId  ||'—'}">(${x.toId||'—'})</span>
+          </span>
+          <span class="sep">·</span>
+          <span class="amt">${fmtAmt(x.amt)}</span>
+          <span class="sep">·</span>
+          <span class="time">${x.tsLocal || '-'}</span>
+        </div>
+      `;
+      return d;
+    }
+
+    function render(rows){
+      const cont = $("#list"), empty=$("#empty");
+      cont.innerHTML = '';
+      rows.sort((a,b)=> (b.tsISO||'').localeCompare(a.tsISO||''));
+      if(!rows.length){ empty.style.display='block'; return; }
+      empty.style.display='none';
+      rows.forEach(x=> cont.appendChild(rowEl(x)));
+    }
+
+    async function refreshFromLast(){
+      render(lastRows);
+      toast('تم التحديث');
+    }
+    $("#refreshBtn").addEventListener('click', refreshFromLast);
+
+    // مستمع لحظي
+    setLive(true);
+    listRef.on('value', async (snap)=>{
+      try{
+        const rawRows = collectFromSnapshot(snap);
+        const rows    = await enrichRows(rawRows);
+        lastRows = rows;
+        render(rows);
+        setLive(true);
+      }catch(e){
+        console.error(e); setLive(false); toast('تعذّر الاتصال');
+      }
+    }, _=> setLive(false));
+
+  })();
+  </script>
+  
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(reg => console.log("✔ Service Worker registered"))
+      .catch(err => console.error("❌ Service Worker failed:", err));
+  }
+</script>
+  
+</body>
+</html>

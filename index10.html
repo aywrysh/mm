@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>إنشاء حساب P2P</title>
+
+  <!-- خطوط وأيقونات -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+      --bg:#ffffff; --card:#fff; --radius:16px;
+      --shadow:0 14px 32px rgba(0,0,0,.06), 0 2px 10px rgba(0,0,0,.04);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;
+      color:var(--ink); background:var(--bg); min-height:100dvh;
+    }
+
+    /* شريط علوي (أبيض) */
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      background:#fff; border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px;
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:900}
+    .dot{width:12px;height:12px;border-radius:50%; background:var(--accent);}
+    .btn{
+      width:40px; height:40px; display:grid; place-items:center; cursor:pointer;
+      color:var(--ink); border:1px solid var(--line); border-radius:12px; background:#fff;
+    }
+    .ms{font-family:'Material Symbols Rounded'}
+
+    /* الحاوية */
+    .wrap{max-width:560px; margin:0 auto; padding:22px 14px 40px}
+
+    /* بطاقة الإدخال */
+    .card{
+      background:var(--card); color:var(--ink);
+      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px; display:grid; gap:10px;
+    }
+    .card h1{margin:0; font-size:20px}
+    .sub{color:var(--muted); font-weight:700; font-size:13px}
+
+    .field{display:grid; gap:6px}
+    .label{font-weight:900; font-size:13px}
+    .input{padding:12px; border:1px solid var(--line); border-radius:12px; background:#fafafa; font-weight:800}
+    .input:focus{outline:none; border-color:#cdd5e0; background:#fff}
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .btn2{padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:#fff; font-weight:900; cursor:pointer}
+    .btn2.primary{background:var(--accent); border-color:var(--accent)}
+
+    /* نتيجة الإنشاء */
+    .result{margin-top:14px; display:none}
+    .result .ok{
+      background:#f7f7f8; border:1px solid #ececec; border-radius:16px; padding:12px;
+    }
+    .kv{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid #ececec; border-radius:12px; background:#fff; margin:6px 0}
+    .kv b{min-width:120px; font-size:13px}
+    .share{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+    .share .btn2{display:flex; align-items:center; gap:6px}
+
+    /* توست أسود صغير */
+    .toast{
+      position:fixed; bottom:18px; left:50%; transform:translateX(-50%) scale(.96);
+      background:rgba(17,17,17,.92); color:#fff; padding:8px 12px; border-radius:10px; font-weight:800; font-size:12px;
+      opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:30;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
+  </style>
+  
+   <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#BBCF38">
+  
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span><span>إنشاء حساب P2P</span></div>
+    <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
+  </header>
+
+  <main class="wrap">
+    <!-- بطاقة الإدخال -->
+    <section class="card" aria-labelledby="t1">
+      <h1 id="t1">بيانات المستخدم</h1>
+      <div class="sub">أدخل الاسم الرباعي و الـID (٩ أرقام يبدأ بـ 99)</div>
+
+      <div class="field">
+        <label class="label" for="name">الاسم الكامل</label>
+        <input id="name" class="input" type="text" placeholder="مثال: م...م...م...م...">
+      </div>
+
+      <div class="field">
+        <label class="label" for="acc">ID الحساب</label>
+        <input id="acc" class="input" type="text" inputmode="numeric" dir="ltr" placeholder="991234567" maxlength="9">
+      </div>
+
+      <div class="row">
+        <button class="btn2" id="clearBtn">مسح</button>
+        <button class="btn2 primary" id="createBtn">إنشاء حساب P2P</button>
+      </div>
+
+      <!-- نتيجة -->
+      <div id="result" class="result">
+        <div class="ok">
+          <div style="font-weight:900; margin-bottom:8px">تم إنشاء/عرض حساب P2P</div>
+
+          <div class="kv"><b>الاسم:</b><span id="outName">—</span></div>
+          <div class="kv"><b>ID:</b><span id="outId" dir="ltr">—</span></div>
+          <div class="kv"><b>اسم المستخدم:</b><span id="outUser" dir="ltr">—</span></div>
+          <div class="kv"><b>كلمة المرور:</b><span id="outPass" dir="ltr">—</span></div>
+
+          <div class="share">
+            <button class="btn2" id="copyBtn"><span class="ms">content_copy</span> نسخ</button>
+            <button class="btn2" id="waBtn"><span class="ms">ios_share</span> واتساب</button>
+            <button class="btn2" id="tgBtn"><span class="ms">send</span> تيليجرام</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+ <!-- Firebase (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<!-- Firebase (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  // ===== إعداد مشروعك =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+    authDomain: "dynex-f4486.firebaseapp.com",
+    databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+    projectId: "dynex-f4486",
+    storageBucket: "dynex-f4486.firebasestorage.app"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // ===== أدوات بسيطة =====
+  const $ = s=>document.querySelector(s);
+  function toast(m){ const t=$("#toast"); if(!t) return; t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1400); }
+
+  // تطبيع الاسم: إزالة مضاعفة المسافات + trim
+  const normName = s => String(s||'').replace(/\s+/g,' ').trim();
+  const validId  = v => /^99\d{7}$/.test(String(v||'').trim());
+
+  // مولدات
+  function genUser(len=7){
+    const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let out=''; for(let i=0;i<len;i++) out += chars[Math.floor(Math.random()*chars.length)];
+    return out;
+  }
+  function genPass(len=12){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let out=''; for(let i=0;i<len;i++) out += chars[Math.floor(Math.random()*chars.length)];
+    return out;
+  }
+
+  // ===== يضمن إنشاء المسارات لو مش موجودة (p2pAccounts / p2pUsernames) =====
+  async function ensureRoots(){
+    try{
+      const root = db.ref('/');
+      const snap = await root.get();
+      const val = snap.exists() ? snap.val() : {};
+      const updates = {};
+      if(!val || typeof val.p2pAccounts === 'undefined'){
+        updates['p2pAccounts/__meta__'] = { createdAt: firebase.database.ServerValue.TIMESTAMP };
+      }
+      if(!val || typeof val.p2pUsernames === 'undefined'){
+        updates['p2pUsernames/__meta__'] = { createdAt: firebase.database.ServerValue.TIMESTAMP };
+      }
+      if(Object.keys(updates).length) await root.update(updates);
+    }catch(e){
+      // مو مشكلة لو فشل؛ الكتابة الأساسية راح تنشئ المسارات برضه
+      console.warn('ensureRoots warn:', e && e.message ? e.message : e);
+    }
+  }
+
+  // ===== البحث عن المستخدم بالـ ID + التحقق من الاسم (مع تطبيع) =====
+  async function findUserByIdAndName(accId, inputName){
+    // SDK
+    try{
+      const q = db.ref('users').orderByChild('accountId').equalTo(String(accId));
+      const s = await q.get();
+      if(s.exists()){
+        // التقط أول عنصر وطلّع مفتاحه (uid)
+        const obj = s.val() || {};
+        const key = Object.keys(obj)[0];
+        const user = obj[key];
+        const okName = normName(user.name) === normName(inputName);
+        if(okName){
+          // لو ما في uid مخزّن، استخدم المفتاح
+          if(!user.uid) user.uid = key;
+          return user;
+        }
+      }
+    }catch(e){
+      console.warn('SDK find warn:', e && e.message ? e.message : e);
+    }
+    // REST احتياطي
+    try{
+      const res = await fetch(firebaseConfig.databaseURL + '/users.json');
+      const all = await res.json() || {};
+      for(const [key,u] of Object.entries(all)){
+        if(String(u.accountId)===String(accId) && normName(u.name)===normName(inputName)){
+          if(!u.uid) u.uid = key;
+          return u;
+        }
+      }
+      return null;
+    }catch(e){
+      console.warn('REST find warn:', e && e.message ? e.message : e);
+      return null;
+    }
+  }
+
+  // ===== فحص وجود حساب P2P سابق =====
+  async function getExistingP2P(uid){
+    try{
+      const s = await db.ref('p2pAccounts/'+uid).get();
+      return s.exists() ? s.val() : null;
+    }catch(e){
+      console.warn('getExistingP2P warn:', e && e.message ? e.message : e);
+      return null;
+    }
+  }
+
+  // ===== حفظ الحساب (سينشئ الأعمدة تلقائياً) + REST احتياطي =====
+  async function saveP2P(uid, accountId, name, username, password){
+    const payloadAcc = {
+      uid, accountId, name, username, password,
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    // محاولة بالـ SDK أولاً
+    try{
+      const updates = {};
+      updates['p2pAccounts/'+uid] = payloadAcc;
+      updates['p2pUsernames/'+username] = { uid, createdAt: firebase.database.ServerValue.TIMESTAMP };
+      await db.ref().update(updates);   // ← ينشئ المسارات لو مش موجودة
+      return true;
+    }catch(e){
+      console.warn('SDK save warn:', e && e.message ? e.message : e);
+      // REST احتياطي (ينشئ المسارات أكيد)
+      try{
+        await fetch(`${firebaseConfig.databaseURL}/p2pAccounts/${uid}.json`, {
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ uid, accountId, name, username, password, createdAt: Date.now() })
+        });
+        await fetch(`${firebaseConfig.databaseURL}/p2pUsernames/${username}.json`, {
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ uid, createdAt: Date.now() })
+        });
+        return true;
+      }catch(e2){
+        console.error('REST save error:', e2 && e2.message ? e2.message : e2);
+        throw e2;
+      }
+    }
+  }
+
+  // ===== عرض النتيجة =====
+  function showResult(name, id, user, pass){
+    const box = $("#result"); if(!box) return;
+    $("#outName").textContent = name || '—';
+    $("#outId").textContent   = id || '—';
+    $("#outUser").textContent = user || '—';
+    $("#outPass").textContent = pass || '—';
+    box.style.display = 'block';
+
+    const msg = `تم إنشاء حساب P2P:\nالاسم: ${name}\nID: ${id}\nاسم المستخدم: ${user}\nكلمة المرور: ${pass}`;
+    const copyBtn = $("#copyBtn"), waBtn = $("#waBtn"), tgBtn = $("#tgBtn");
+    if(copyBtn){ copyBtn.onclick = async ()=>{ try{ await navigator.clipboard.writeText(msg); toast('تم النسخ'); }catch(_){ toast('انسخ يدويًا'); } }; }
+    if(waBtn){   waBtn.onclick   = ()=>{ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); }; }
+    if(tgBtn){   tgBtn.onclick   = ()=>{ window.open('https://t.me/share/url?url=&text='+encodeURIComponent(msg), '_blank'); }; }
+  }
+
+  // ===== أزرار عامة (نفس صفحتك) =====
+  if($("#backBtn"))  $("#backBtn").onclick  = ()=>{ if(history.length>1) history.back(); };
+  if($("#clearBtn")) $("#clearBtn").onclick = ()=>{ $("#name").value=''; $("#acc").value=''; $("#result").style.display='none'; };
+
+  // ===== تشغيل أولي: ضمن إنشاء الجذور مرة واحدة =====
+  ensureRoots();
+
+  // ===== زر "إنشاء الحساب" =====
+  if($("#createBtn")) $("#createBtn").onclick = async ()=>{
+    const name = normName($("#name").value);
+    const acc  = String($("#acc").value||'').trim();
+
+    if(!name){ toast('أدخل الاسم'); $("#name").focus(); return; }
+    if(!validId(acc)){ toast('ID غير صالح (يبدا بـ 99 ومجموعه 9 أرقام)'); $("#acc").focus(); return; }
+
+    const btn = $("#createBtn"); const prev = btn.textContent; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
+    try{
+      const user = await findUserByIdAndName(acc, name);
+      if(!user){ toast('الاسم أو الـID غير صحيح'); return; }
+
+      // لو موجود من قبل رجّع نفس البيانات
+      let p2p = await getExistingP2P(user.uid);
+      if(!p2p){
+        const username = genUser(7);
+        const password = genPass(12);
+        await saveP2P(user.uid, user.accountId, user.name, username, password);
+        p2p = { username, password };
+      }
+
+      showResult(user.name, user.accountId, p2p.username, p2p.password);
+      toast('تم');
+    }catch(err){
+      console.error('[P2P CREATE ERROR]', err);
+      toast('تعذّر إنشاء الحساب');
+    }finally{
+      btn.disabled = false; btn.textContent = prev;
+    }
+  };
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(reg => console.log("✔ Service Worker registered"))
+      .catch(err => console.error("❌ Service Worker failed:", err));
+  }
+</script>
+
+
+</body>
+</html>
