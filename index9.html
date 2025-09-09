@@ -64,8 +64,8 @@
     .toast.show{opacity:1;transform:translateX(-50%) scale(1)}
   </style>
   
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#BBCF38">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
   
 </head>
 <body>
@@ -186,22 +186,52 @@
     let currentKey = null;   // مفتاح صف المستخدم داخل users
     let currentUser = null;  // بيانات المستخدم الحالية
 
+    // ✅ دالة بحث محسّنة: UID مباشر، accountId كنص/رقم، والاسم
     async function findUser(term){
       const t = String(term||'').trim();
       if(!t) return null;
 
-      // لو ID رقمي (99 + 7 أرقام) أو أرقام عموماً → نبحث بالـ accountId
-      let snap;
+      // 1) UID مباشر users/{uid}
+      try{
+        const s = await firebase.database().ref('users/'+t).once('value');
+        if (s.exists()) return { key: t, user: s.val() };
+      }catch(_){}
+
+      // 2) accountId (نجرّب تساوي نص ثم رقم)
       if (/^99\d{7}$/.test(t) || /^\d+$/.test(t)) {
-        snap = await db.ref('users').orderByChild('accountId').equalTo(t).get();
-      } else {
-        // بحث بالاسم الكامل (تطابق تام)
-        snap = await db.ref('users').orderByChild('name').equalTo(t).get();
+        try{
+          // كنص
+          let s = await firebase.database().ref('users').orderByChild('accountId').equalTo(t).once('value');
+          if (s.exists()){
+            const obj = s.val(); const key = Object.keys(obj)[0];
+            return { key, user: obj[key] };
+          }
+          // كرقم
+          const tNum = Number(t);
+          s = await firebase.database().ref('users').orderByChild('accountId').equalTo(tNum).once('value');
+          if (s.exists()){
+            const obj = s.val(); const key = Object.keys(obj)[0];
+            return { key, user: obj[key] };
+          }
+        }catch(e){
+          console.error('accountId query error:', e);
+          throw e;
+        }
       }
-      if(!snap.exists()) return null;
-      const obj = snap.val();
-      const key = Object.keys(obj)[0];
-      return { key, user: obj[key] };
+
+      // 3) الاسم الكامل (تطابق تام)
+      try{
+        const s = await firebase.database().ref('users').orderByChild('name').equalTo(t).once('value');
+        if (s.exists()){
+          const obj = s.val(); const key = Object.keys(obj)[0];
+          return { key, user: obj[key] };
+        }
+      }catch(e){
+        console.error('name query error:', e);
+        throw e;
+      }
+
+      return null;
     }
 
     function fmt2(n){ return Number(n||0).toFixed(2); }
@@ -223,7 +253,6 @@
       const snap = await db.ref('adminOps/'+currentKey).limitToLast(10).get();
       if(!snap.exists()) return;
 
-      // نجمع و نرتّب تنازلي بالوقت
       const rows = Object.values(snap.val()||{}).sort((a,b)=>Number(b.at||0)-Number(a.at||0));
       rows.forEach(x=>{
         const d = document.createElement('div');
@@ -252,7 +281,12 @@
         renderUser(currentUser);
         loadLog();
       }catch(err){
-        console.error(err); toast('تعذّر البحث');
+        console.error(err);
+        if (err && err.code === 'PERMISSION_DENIED') {
+          toast('صلاحيات القراءة مرفوضة (Rules)');
+        } else {
+          toast('تعذّر البحث');
+        }
       }finally{
         $("#doSearch").disabled = false;
       }
@@ -263,18 +297,17 @@
     $("#clearAmt").onclick = ripple;
     $("#clearAmt").addEventListener('click', ()=> $("#amount").value='');
 
-    // ===== دالة التنفيذ بالـ transaction (إصدار محسن) =====
+    // ===== تنفيذ العمليات بالـ transaction =====
     async function doOp(kind){
       if(!currentKey){ toast('اجلب المستخدم أولاً'); return; }
 
-      // قراءة المبلغ (يدعم الفاصلة)
       const raw = String($("#amount").value||'').trim().replace(',', '.');
       const val = parseFloat(raw);
       if (!val || val<=0){ toast('أدخل مبلغ صحيح'); return; }
 
       const userRef = db.ref('users/'+currentKey);
 
-      // فحص سريع قبل المعاملة لتجربة رسائل واضحة
+      // فحص سريع قبل المعاملة
       const snap0 = await userRef.get();
       if(!snap0.exists()){ toast('المستخدم غير موجود'); return; }
       const u0 = snap0.val() || {};
@@ -288,7 +321,6 @@
         if (lock0 < val){ toast('المبلغ المقفل غير كافٍ'); return; }
       }
 
-      // المعاملة الذكية
       const result = await userRef.transaction(user=>{
         if(!user) return user;
         let bal = Number(user.balance||0);
@@ -301,12 +333,10 @@
           bal -= val;
         }else if (kind==='to_locked'){
           if (bal < val) return;
-          bal -= val;
-          lock += val;
+          bal -= val; lock += val;
         }else if (kind==='from_locked'){
           if (lock < val) return;
-          lock -= val;
-          bal += val;
+          lock -= val; bal += val;
         }else{
           return;
         }
@@ -322,7 +352,6 @@
         return;
       }
 
-      // تحديث العرض + تسجيل العملية
       const u1 = result.snapshot.val() || {};
       $("#uBal").textContent    = fmt2(u1.balance||0);
       $("#uLocked").textContent = fmt2(u1.lockedAmount||0);
@@ -340,21 +369,21 @@
       loadLog();
     }
 
-    // ربط الأزرار الأربعة
-    $("#btnDepBal").onclick   = (e)=>{ ripple(e); doOp('deposit_balance'); };
-    $("#btnWdrBal").onclick   = (e)=>{ ripple(e); doOp('withdraw_balance'); };
-    $("#btnToLocked").onclick = (e)=>{ ripple(e); doOp('to_locked'); };
-    $("#btnFromLocked").onclick=(e)=>{ ripple(e); doOp('from_locked'); };
+    // ربط الأزرار
+    $("#btnDepBal").onclick    = (e)=>{ ripple(e); doOp('deposit_balance'); };
+    $("#btnWdrBal").onclick    = (e)=>{ ripple(e); doOp('withdraw_balance'); };
+    $("#btnToLocked").onclick  = (e)=>{ ripple(e); doOp('to_locked'); };
+    $("#btnFromLocked").onclick= (e)=>{ ripple(e); doOp('from_locked'); };
 
   </script>
   
   <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .then(reg => console.log("✔ Service Worker registered"))
-      .catch(err => console.error("❌ Service Worker failed:", err));
-  }
-</script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(reg => console.log("✔ Service Worker registered"))
+        .catch(err => console.error("❌ Service Worker failed:", err));
+    }
+  </script>
   
 </body>
 </html>
