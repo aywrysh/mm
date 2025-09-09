@@ -280,13 +280,15 @@
     });
   </script>
 
-  <!-- ملاحظة: لتعطيل أي كاش قديم للـSW على صفحات GitHub استعمل نسخة محدثة -->
-  <script>
-    // مؤقتًا: لا نسجل SW لتفادي صفحة بيضاء من كاش قديم.
-    // إذا احتجته لاحقًا فعّله بإصدار مثل:
-    // if ("serviceWorker" in navigator) {
-    //   navigator.serviceWorker.register("service-worker.js?v=2");
-    // }
+
+ <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(reg => console.log("✔ Service Worker registered"))
+      .catch(err => console.error("❌ Service Worker failed:", err));
+  }
+</script>
+ 
   </script>
 </body>
 </html>
