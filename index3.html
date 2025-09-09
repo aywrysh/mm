@@ -324,5 +324,148 @@
   }
 </script>
   
+  
+  <script>
+/* ===== إشعارات سطح المكتب + فحص رسائل كل 5 ثواني ===== */
+(function () {
+  // لازم Firebase compat يكون مفعّل فوق (أنت بالفعل محمّله في الصفحة)
+  if (!window.firebase || !firebase.database) return;
+
+  // طلب صلاحية الإشعارات مرة واحدة
+  async function ensureNotifyPermission() {
+    try {
+      if (!('Notification' in window)) return false;
+      if (Notification.permission === 'granted') return true;
+      if (Notification.permission === 'denied') return false;
+      const perm = await Notification.requestPermission();
+      return perm === 'granted';
+    } catch (_) { return false; }
+  }
+
+  // إظهار إشعار سطح مكتب
+  function showDesktop(title, body, data) {
+    try {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+      const n = new Notification(title || 'إشعار', {
+        body: body || '',
+        icon: '/icon-192.png',    // لو عندك أيقونة ضع مسارها هنا
+        badge: '/icon-72.png',    // شارة صغيرة اختيارية
+        tag: (data && data.tag) || 'dynex-msg', // لمنع تكرار نفس الإشعار
+        renotify: false
+      });
+      n.onclick = (e) => {
+        e.preventDefault();
+        window.focus();
+        // تقدر تفتح الشيت/صفحة الرسائل هنا لو ودك:
+        // document.getElementById('messagesBtn')?.click();
+        n.close();
+      };
+      setTimeout(()=>n.close(), 8000); // يغلق بعد 8 ثواني (اختياري)
+    } catch(_) {}
+  }
+
+  // صوت خفيف (اختياري)
+  let snd = document.getElementById('msgSnd');
+  if (!snd) {
+    snd = document.createElement('audio');
+    snd.id = 'msgSnd';
+    snd.preload = 'auto';
+    snd.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAA'; // بدّلها لو عندك ملف
+    document.body.appendChild(snd);
+  }
+
+  // UID من الجلسة — للإنبوكس الخاص (إن وجد)
+  let UID = null;
+  try {
+    const s = JSON.parse(localStorage.getItem('dynex_session') || 'null');
+    UID = s && s.uid;
+  } catch(_) {}
+
+  const db = firebase.database();
+  const refPublic  = db.ref('company/messages');
+  const refPrivate = UID ? db.ref('user_inbox/' + UID) : null;
+
+  // نخزن آخر مفتاح شُوهد — عشان ما نكرر
+  const LS_PUB  = 'notif_last_company';
+  const LS_PRIV = 'notif_last_inbox';
+  const getSeen = (k)=> localStorage.getItem(k) || '';
+  const setSeen = (k,v)=> localStorage.setItem(k, v || '');
+
+  // تحويل push key لأقرب وقت (للترتيب/العرض الاحتياط)
+  const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+  function pushIdToTime(id){
+    if(!id) return 0;
+    let ts=0;
+    for(let i=0;i<8;i++){ ts = ts*64 + PUSH_CHARS.indexOf(id.charAt(i)); }
+    return ts;
+  }
+
+  // صياغة عنوان/نص للإشعار من آخر رسالة
+  function makeNotifPayload(lastObj){
+    const title = (lastObj.title || 'رسالة جديدة').trim();
+    const body  = String(lastObj.body || lastObj.text || '').trim();
+    return { title, body };
+  }
+
+  // فحص مرجع (عام/خاص): يقرأ آخر عنصر، يقارن، ويشغّل إشعار إذا الصفحة بالخلفية
+  async function checkLatestOnce(ref, storeKey, tag) {
+    try {
+      const snap = await ref.limitToLast(1).get();
+      if (!snap.exists()) return false;
+      let lastKey = '', lastObj = null;
+      snap.forEach(ch => { lastKey = ch.key; lastObj = ch.val() || {}; });
+
+      // جديد؟
+      const seen = getSeen(storeKey);
+      const hasNew = lastKey && lastKey !== seen;
+
+      // تحديث الـ seen فورًا (عشان ما تتكرر الإشعارات) — تقدر تأخره لين تفتح الشيت
+      // بس هنا نبغى إشعار مرة وحدة فقط.
+      if (hasNew) setSeen(storeKey, lastKey);
+
+      // لو الصفحة بالخلفية + عندنا صلاحية → أعرض إشعار Banner
+      if (hasNew && document.hidden) {
+        const ok = await ensureNotifyPermission();
+        if (ok) {
+          const { title, body } = makeNotifPayload(lastObj);
+          showDesktop(title, body, { tag });
+        }
+        // صوت بسيط
+        try { snd.currentTime = 0; snd.play().catch(()=>{}); } catch(_) {}
+      }
+
+      return hasNew;
+    } catch(_) { return false; }
+  }
+
+  // فحص دوري كل 5 ثواني
+  async function pollAll() {
+    try {
+      await checkLatestOnce(refPublic, LS_PUB,  'company');
+      if (refPrivate) await checkLatestOnce(refPrivate, LS_PRIV, 'inbox');
+    } catch(_) {}
+  }
+
+  // مستمع لحظي (يشتغل حتى لو ما سوّينا poll)
+  refPublic.limitToLast(1).on('value', pollAll);
+  if (refPrivate) refPrivate.limitToLast(1).on('value', pollAll);
+
+  // احتياط كل 5 ثواني
+  setInterval(pollAll, 5000);
+
+  // اطلب الصلاحية أول ما يحمّل (مرة واحدة فقط)
+  ensureNotifyPermission();
+
+  // لو عندك زر رسائل/نقطة… خلّي فتح الشيت يوقف النقطة/الهزّة الخ
+  // (اختياري، يشتغل مع كودك الحالي)
+  document.getElementById('messagesBtn')?.addEventListener('click', ()=>{
+    // لما تفتح الرسائل، اعتبر آخر واحد مقروء
+    refPublic.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PUB, ch.key)));
+    if (refPrivate) refPrivate.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PRIV, ch.key)));
+  });
+})();
+</script>
+  
 </body>
 </html>
