@@ -19,6 +19,10 @@
       --radius:18px;
       --shadow-lg:0 18px 40px rgba(0,0,0,.35);
       --shadow-md:0 10px 24px rgba(0,0,0,.25);
+      /* ألوان إضافية ولمسات */
+      --accent-2:#89A61B;
+      --glow: 0 0 0 6px rgba(187,207,56,.12);
+      --chip: rgba(255,255,255,.08);
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{height:100%}
@@ -32,7 +36,7 @@
 
     /* شريط علوي */
     .topbar{
-      position:sticky; top:0; z-index:20;
+      position:sticky; top:0; z-index:30;
       backdrop-filter:saturate(140%) blur(10px);
       background:linear-gradient(180deg, rgba(11,18,32,.75), rgba(11,18,32,.45));
       border-bottom:1px solid rgba(255,255,255,.06);
@@ -45,29 +49,68 @@
     .btn{
       width:40px;height:40px; display:grid; place-items:center; cursor:pointer;
       border:1px solid rgba(255,255,255,.10); border-radius:12px; background:rgba(255,255,255,.04);
-      transition:transform .08s ease, border-color .2s ease;
+      transition:transform .08s ease, border-color .2s ease, box-shadow .2s ease;
     }
-    .btn:hover{border-color:rgba(255,255,255,.18)}
+    .btn:hover{border-color:rgba(255,255,255,.18); box-shadow:var(--glow)}
     .btn:active{transform:translateY(1px)}
     .ms{font-family:'Material Symbols Rounded'; line-height:1}
 
     /* الحاوية */
-    .container{max-width:1200px; margin:0 auto; padding:22px 14px 36px}
+    .container{max-width:1200px; margin:0 auto; padding:22px 14px 92px}
 
-    /* نافذة العنوان (بيضاء فخمة) */
+    /* نافذة العنوان (بيضاء) */
     .hero{
-      position:relative; border-radius:var(--radius); padding:26px 22px;
-      background:#fff; border:1px solid rgba(0,0,0,.06);
+      position:relative; border-radius:var(--radius); padding:26px 22px 20px;
+      background:
+        radial-gradient(240px 140px at 10% 0%, rgba(187,207,56,.12), transparent 60%),
+        radial-gradient(260px 160px at 90% -10%, rgba(255,255,255,.55), transparent 65%),
+        #fff;
+      border:1px solid rgba(0,0,0,.06);
       box-shadow:0 14px 40px rgba(0,0,0,.20), 0 2px 10px rgba(0,0,0,.08);
-      display:grid; gap:8px; text-align:center; overflow:hidden; isolation:isolate;
+      display:grid; gap:14px; text-align:center; overflow:hidden; isolation:isolate;
+      color:#0b1220;
     }
-    .hero::before{
-      content:""; position:absolute; inset:-40% -10% auto -10%; height:160px; border-radius:50%;
-      background:radial-gradient(400px 140px at 50% 40%, rgba(187,207,56,.18), rgba(255,255,255,0) 60%);
-      pointer-events:none;
+    .hero h1{margin:0; font-size:26px; font-weight:900; letter-spacing:.2px}
+    .hero .hint{color:#6b7280; font-size:14px; font-weight:700}
+
+    /* زر داخل الهيرو */
+    .hero-cta{
+      display:inline-flex; align-items:center; gap:8px; justify-self:center; margin-top:4px;
+      padding:12px 18px; border-radius:14px; font-weight:900; text-decoration:none;
+      background:linear-gradient(180deg, var(--accent), var(--accent-2));
+      color:#0b120f; border:1px solid rgba(0,0,0,.10); box-shadow:0 10px 24px rgba(187,207,56,.35), 0 0 0 4px rgba(187,207,56,.18);
+      transition:transform .1s ease, box-shadow .2s ease, filter .2s ease;
     }
-    .hero h1{margin:0; font-size:24px; color:#111827; font-weight:900}
-    .hero .hint{color:#6b7280; font-size:14px; font-weight:600}
+    .hero-cta .ms{font-size:20px}
+    .hero-cta:hover{ box-shadow:0 16px 36px rgba(187,207,56,.45), 0 0 0 6px rgba(187,207,56,.18); filter:saturate(110%) }
+    .hero-cta:active{ transform:translateY(1px) }
+
+    /* قسم الإحصائيات (بنفس روح الصفحة) */
+    .section{
+      margin-top:16px; border-radius:16px; padding:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:var(--shadow-lg);
+    }
+    .section h2{margin:0 0 10px; font-size:16px; font-weight:900; color:#fff}
+    .rows{display:grid;gap:8px}
+    .row{
+      display:flex; align-items:center; gap:10px; padding:10px;
+      border:1px solid rgba(255,255,255,.10); border-radius:12px;
+      background:rgba(255,255,255,.03)
+    }
+    .row .name{font-weight:800}
+    .row .sep{color:#94a3b8}
+    .row .amt{font-weight:900; color:#fff}
+    .badge{
+      padding:3px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.14);
+      background:var(--chip); font-weight:800; font-size:12px; color:#d1d5db
+    }
+    .users{display:grid;gap:8px}
+    .empty{
+      display:none; text-align:center; color:#94a3b8; font-weight:800;
+      padding:12px; border:1px dashed rgba(255,255,255,.18); border-radius:12px; background:rgba(255,255,255,.02)
+    }
 
     /* شبكة الأزرار */
     .grid{ margin-top:16px; display:grid; gap:14px; grid-template-columns:repeat(4, minmax(0, 1fr)); }
@@ -77,21 +120,30 @@
 
     .tile{
       position:relative; overflow:hidden; cursor:pointer; isolation:isolate;
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.10);
       border-radius:18px; padding:18px;
       display:flex; align-items:center; gap:12px;
       box-shadow:var(--shadow-lg);
       color:#f8fafc; text-decoration:none;
-      transition:transform .15s ease, border-color .2s ease, background .2s ease;
+      transition:transform .15s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
     }
-    .tile:hover{ transform:translateY(-2px); border-color:rgba(187,207,56,.35); background:linear-gradient(180deg, rgba(187,207,56,.10), rgba(255,255,255,.03)); }
+    .tile:hover{
+      transform:translateY(-2px);
+      border-color:rgba(187,207,56,.35);
+      background:
+        radial-gradient(120px 60px at 90% -20%, rgba(187,207,56,.08), transparent 60%),
+        linear-gradient(180deg, rgba(187,207,56,.10), rgba(255,255,255,.03));
+      box-shadow:0 18px 36px rgba(0,0,0,.35), 0 0 0 5px rgba(187,207,56,.10);
+    }
     .tile:active{ transform:translateY(0) scale(.99); }
     .tile .icon{
       width:52px;height:52px; min-width:52px; border-radius:16px;
       background:linear-gradient(180deg,#1f2937,#111827);
       border:1px solid rgba(255,255,255,.10);
       display:grid; place-items:center;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
     }
     .tile .icon .ms{font-size:26px; color:var(--accent)}
     .tile .text{display:grid; gap:2px}
@@ -100,14 +152,40 @@
     .right{margin-inline-start:auto; color:#9ca3af; display:flex; align-items:center; gap:6px}
     .chip{ font-weight:800; font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:#d1d5db; }
 
+    /* شارة مميزة لعنصر الإعلان */
+    .chip-accent{ border-color:rgba(187,207,56,.6); color:#E8F2A6; background:rgba(187,207,56,.10) }
+
     /* Ripple */
     .ripple{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.18);animation:ripple .6s linear;pointer-events:none}
     @keyframes ripple{to{transform:scale(3);opacity:0}}
+
+    /* زر طافٍ لإنشاء إعلان */
+    .fab{
+      position:fixed; inset-inline-end:18px; bottom:18px; z-index:40;
+      width:62px; height:62px; border-radius:18px; display:grid; place-items:center;
+      background:linear-gradient(180deg, var(--accent), var(--accent-2)); color:#0b120f;
+      border:1px solid rgba(0,0,0,.18);
+      box-shadow:0 16px 38px rgba(187,207,56,.35), 0 0 0 6px rgba(187,207,56,.16);
+      cursor:pointer; text-decoration:none; font-weight:900;
+      transition:transform .1s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .fab:hover{ box-shadow:0 22px 52px rgba(187,207,56,.45), 0 0 0 8px rgba(187,207,56,.16); filter:saturate(112%) }
+    .fab:active{ transform:translateY(1px) }
+    .fab .ms{font-size:26px}
+    .fab-label{
+      position:fixed; inset-inline-end:92px; bottom:28px; z-index:40;
+      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+      padding:8px 12px; border-radius:12px; font-weight:900; color:#e5e7eb; backdrop-filter:blur(8px);
+      box-shadow:var(--shadow-md);
+    }
+
+    /* توست */
+    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) scale(.96);background:rgba(17,17,17,.92);color:#fff;padding:8px 12px;border-radius:10px;font-weight:800;font-size:12px;opacity:0;pointer-events:none;transition:.25s;z-index:70}
+    #toast.show{opacity:1;transform:translateX(-50%) scale(1)}
   </style>
   
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#BBCF38">
-  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
 </head>
 <body>
 
@@ -125,9 +203,28 @@
     <section class="hero">
       <h1>لوحة عمليات الشركة</h1>
       <div class="hint">اختر إحدى العمليات التالية لإدارتها بسرعة.</div>
+
+      <!-- زر إنشاء إعلان داخل الهيرو -->
+      <a class="hero-cta ripple-container" href="index13.html" id="ctaCreateAnn">
+        <span class="ms">campaign</span>
+        <span>إنشاء إعلان جديد</span>
+      </a>
     </section>
 
-    <!-- شبكة الأزرار (روابط مباشرة لملفات حقيقية) -->
+    <!-- 🔴 الإحصائيات المباشرة من Firebase (نفس ربط صفحتك) -->
+    <section class="section" id="liveStats">
+      <h2>الإحصائيات المباشرة</h2>
+      <div id="metrics" class="rows"></div>
+      <div id="empty1" class="empty">لا يوجد بيانات لعرضها الآن.</div>
+    </section>
+
+    <section class="section">
+      <h2>المستخدمون <span id="newCount" class="badge">0</span></h2>
+      <div id="newUsers" class="users"></div>
+      <div id="empty2" class="empty">لا يوجد مستخدمون جدد.</div>
+    </section>
+
+    <!-- شبكة الأزرار (روابط مباشرة) -->
     <section class="grid">
       <a class="tile ripple-container" href="index2.html">
         <div class="icon"><span class="ms">account_balance_wallet</span></div>
@@ -165,21 +262,21 @@
         <div class="right"><span class="chip">سريع</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <!-- ✅ عرض المستخدم (أدمن) -->
+      <!-- عرض المستخدم (أدمن) -->
       <a class="tile ripple-container" href="index8.html">
         <div class="icon"><span class="ms">manage_search</span></div>
         <div class="text"><div class="title">عرض المستخدم</div><div class="desc">بحث ونسخ بيانات الحساب</div></div>
         <div class="right"><span class="chip">أدمن</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <!-- ✅ الإيداعات: قائمة ومراجعة -->
+      <!-- الإيداعات: قائمة ومراجعة -->
       <a class="tile ripple-container" href="index9.html">
         <div class="icon"><span class="ms">list_alt</span></div>
         <div class="text"><div class="title">الإيداعات</div><div class="desc">سجل الإيداعات واعتمادها</div></div>
         <div class="right"><span class="chip">سجل</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <!-- ✅ إنشاء حساب P2P -->
+      <!-- إنشاء حساب P2P -->
       <a class="tile ripple-container" href="index10.html">
         <div class="icon"><span class="ms">vpn_key</span></div>
         <div class="text">
@@ -189,7 +286,7 @@
         <div class="right"><span class="chip">P2P</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <!-- 🆕 المقترحات والشكاوى -->
+      <!-- المقترحات والشكاوى -->
       <a class="tile ripple-container" href="index11.html">
         <div class="icon"><span class="ms">forum</span></div>
         <div class="text">
@@ -198,39 +295,378 @@
         </div>
         <div class="right"><span class="chip">صندوق</span><span class="ms">chevron_left</span></div>
       </a>
-      <!-- نهاية الإضافة -->
+
+      <!-- إنشاء إعلان -->
+      <a class="tile ripple-container" href="index13.html" id="tileCreateAnn">
+        <div class="icon"><span class="ms">campaign</span></div>
+        <div class="text">
+          <div class="title">إنشاء إعلان</div>
+          <div class="desc">إعلان عام أو موجّه (UID/AccountID)</div>
+        </div>
+        <div class="right"><span class="chip chip-accent">إعلان</span><span class="ms">chevron_left</span></div>
+      </a>
     </section>
   </main>
 
-  <script>
-  // Ripple بسيط بدون إلغاء التنقل
-  document.addEventListener('click', e=>{
-    const host = e.target.closest('.ripple-container'); if(!host) return;
-    const r = document.createElement('span');
-    const d = Math.max(host.clientWidth, host.clientHeight);
-    const rect = host.getBoundingClientRect();
-    r.className='ripple';
-    r.style.width=r.style.height=d+'px';
-    r.style.left=(e.clientX-rect.left-d/2)+'px';
-    r.style.top=(e.clientY-rect.top-d/2)+'px';
-    const old=host.querySelector('.ripple'); if(old) old.remove();
-    host.appendChild(r); setTimeout(()=>r.remove(),600);
-  });
+  <!-- زر طافٍ ثابت لإنشاء إعلان -->
+  <a class="fab ripple-container" href="index13.html" id="fabCreateAnn" title="إنشاء إعلان">
+    <span class="ms">campaign</span>
+  </a>
+  <div class="fab-label">إنشاء إعلان</div>
 
-  // أزرار أعلى الصفحة
-  document.getElementById('refreshBtn').onclick = ()=>location.reload();
-  document.getElementById('helpBtn').onclick    = ()=>alert('افتح الصفحة المطلوبة: index1…index10 + index11.html (المقترحات والشكاوى).');
+  <div id="toast"></div>
+
+  <!-- Ripple بسيط -->
+  <script>
+    document.addEventListener('click', e=>{
+      const host = e.target.closest('.ripple-container'); if(!host) return;
+      const r = document.createElement('span');
+      const d = Math.max(host.clientWidth, host.clientHeight);
+      const rect = host.getBoundingClientRect();
+      r.className='ripple';
+      r.style.width=r.style.height=d+'px';
+      r.style.left=(e.clientX-rect.left-d/2)+'px';
+      r.style.top=(e.clientY-rect.top-d/2)+'px';
+      const old=host.querySelector('.ripple'); if(old) old.remove();
+      host.appendChild(r); setTimeout(()=>r.remove(),600);
+    });
+
+    // أزرار أعلى الصفحة
+    document.getElementById('refreshBtn').onclick = ()=>location.reload();
+    document.getElementById('helpBtn').onclick    = ()=>alert('افتح الصفحة المطلوبة: index1…index10 + index11.html (المقترحات والشكاوى). لإنشاء إعلان: index13.html.');
+
+    // إخفاء/إظهار تلميح الـ FAB حسب التمرير
+    (function(){
+      const label = document.querySelector('.fab-label');
+      if(!label) return;
+      let lastY = window.scrollY;
+      window.addEventListener('scroll', ()=>{
+        const now = window.scrollY;
+        const down = now > lastY;
+        label.style.opacity = down ? '0' : '1';
+        label.style.transform = down ? 'translateY(6px)' : 'translateY(0)';
+        lastY = now;
+      }, {passive:true});
+    })();
   </script>
-  
-  
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <!-- ربط الإحصائيات بقاعدة البيانات (نفس منطق صفحتك المربوطة) -->
+  <script>
+  (function(){
+    const $ = s=>document.querySelector(s);
+
+    /* Firebase */
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+      authDomain: "dynex-f4486.firebaseapp.com",
+      databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+      projectId: "dynex-f4486",
+      storageBucket: "dynex-f4486.firebasestorage.app"
+    };
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    /* إعداد */
+    const AUTO_REFRESH_MS = 10000;
+    function toast(m){
+      const t=$("#toast"); if(!t) return;
+      t.textContent=m; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 1200);
+    }
+
+    /* Helpers */
+    const now = ()=> Date.now();
+    const last48Start = ()=> now() - 48*60*60*1000;
+    const last90Start = ()=> now() - 90*24*60*60*1000;
+    const safeLen = o => (o ? Object.keys(o).length : 0);
+    const num = v => { const n=Number(v); return (isNaN(n)||!isFinite(n))?NaN:n; };
+
+    function getUserName(u, fallbackId){
+      return (
+        u?.name ?? u?.fullName ?? u?.displayName ?? u?.realname ?? u?.nickname ?? u?.username ??
+        (u?.accountId ? ('حساب ' + u.accountId) : (fallbackId || '—'))
+      );
+    }
+    function getUserIdDisplay(u, uid){
+      if(u?.username) return '@'+u.username;
+      if(u?.phone) return u.phone;
+      if(u?.accountId || u?.accountID || u?.accId) return String(u.accountId||u.accountID||u.accId);
+      return uid;
+    }
+    function getUserTs(u){
+      if(!u) return 0;
+      const candidates = [u.created_ts, u.createdTs, u.createdAt, u.created_at, u.signupAt, u.joinedAt, u.time, u.at];
+      for(const c of candidates){
+        if(typeof c === 'number'){
+          if(c > 1e11) return c;
+          if(c > 1e9)  return c*1000;
+        }else if(typeof c === 'string'){
+          const n = num(c);
+          if(!isNaN(n)){
+            if(n > 1e11) return n;
+            if(n > 1e9)  return n*1000;
+          }
+          const t = Date.parse(c);
+          if(!isNaN(t)) return t;
+        }
+      }
+      return 0;
+    }
+    async function getPathAny(paths){
+      for(const p of paths){
+        try{ const s=await db.ref(p).get(); if(s.exists()) return {path:p, data:s.val()}; }catch(_){}
+      }
+      return {path:paths[0], data:null};
+    }
+
+    /* Queries */
+    async function loadUsers(){
+      const snap = await db.ref('users').get().catch(()=>null);
+      const users = (snap && snap.exists()) ? snap.val() : {};
+      const total = safeLen(users);
+
+      const all = [], fresh = [];
+      const start48 = last48Start();
+
+      for(const id in users){
+        const u = users[id]||{};
+        const ts = getUserTs(u);
+        const name = getUserName(u, id);
+        const disp = getUserIdDisplay(u, id);
+        const item = {
+          id, name: name || '—', idtxt: disp || id,
+          ts: ts || 0,
+          tsLocal: ts ? new Date(ts).toLocaleString('ar-EG', { hour12:false }) : '—'
+        };
+        all.push(item);
+        if(ts && ts >= start48) fresh.push(item);
+      }
+
+      all.sort((a,b)=> b.ts - a.ts);
+      fresh.sort((a,b)=> b.ts - a.ts);
+
+      const showList = fresh.length ? fresh : all.slice(0, 100);
+      const mode = fresh.length ? 'fresh' : 'fallback';
+
+      return { total, fresh48:fresh, showList, mode };
+    }
+
+    async function loadDeposits(){
+      const {data:deps1} = await getPathAny(['deposits']);
+      const {data:deps2} = await getPathAny(['deposits_unlinked']);
+      const start = last90Start();
+
+      let count=0;
+      const uniq = new Set();
+
+      if(deps1){
+        Object.keys(deps1).forEach(uid=>{
+          const items = deps1[uid]||{};
+          Object.keys(items).forEach(k=>{
+            const d = items[k]||{};
+            let t = num(d.createdAt);
+            if(isNaN(t)){
+              t = num(d.clientTime);
+              if(isNaN(t)){
+                const parsed = Date.parse(d.created_at||d.createdAt||d.time||d.at||'');
+                t = isNaN(parsed)? NaN : parsed;
+              }
+            }
+            if(!isNaN(t) && t>=start){ count++; if(uid) uniq.add(String(uid)); }
+          });
+        });
+      }
+      if(deps2){
+        Object.keys(deps2).forEach(k=>{
+          const d = deps2[k]||{};
+          let t = num(d.createdAt);
+          if(isNaN(t)){
+            t = num(d.clientTime);
+            if(isNaN(t)){
+              const parsed = Date.parse(d.created_at||d.createdAt||d.time||d.at||'');
+              t = isNaN(parsed)? NaN : parsed;
+            }
+          }
+          if(!isNaN(t) && t>=start){ count++; if(d.uid) uniq.add(String(d.uid)); }
+        });
+      }
+      return { count90:count, unique90:uniq.size };
+    }
+
+    async function loadWithdrawals(){
+      const {data:w1} = await getPathAny(['withdrawals','withdraws','payouts']);
+      const start = last90Start();
+      let count=0;
+      if(w1){
+        const keys = Object.keys(w1);
+        const firstKey = keys.length ? keys[0] : null;
+        const firstVal = firstKey ? w1[firstKey] : null;
+        const nested = firstVal && typeof firstVal === 'object' && !('created_ts' in firstVal) && !('created_at' in firstVal) && !('time' in firstVal);
+        if(nested){
+          Object.keys(w1).forEach(uid=>{
+            const items=w1[uid]||{};
+            Object.keys(items).forEach(k=>{
+              const r=items[k]||{};
+              const t = r.created_ts ?? num(r.createdAt) ?? Date.parse(r.created_at||r.time||r.at||'');
+              if(!isNaN(t) && t>=start) count++;
+            });
+          });
+        }else{
+          Object.keys(w1).forEach(k=>{
+            const r = w1[k]||{};
+            const t = r.created_ts ?? num(r.createdAt) ?? Date.parse(r.created_at||r.time||r.at||'');
+            if(!isNaN(t) && t>=start) count++;
+          });
+        }
+      }
+      return { count90:count };
+    }
+
+    async function loadLocked(){
+      const {data:l1} = await getPathAny(['balance_to_locked','balance-to-locked','locked_entries','constraints_locked']);
+      return { total: safeLen(l1||{}) };
+    }
+
+    async function loadTransfers(){
+      const {data:t1} = await getPathAny(['transfers','transfers_all','p2p_transfers']);
+      if(!t1) return { total:0 };
+      let total=0;
+      const keys = Object.keys(t1);
+      const firstKey = keys.length ? keys[0] : null;
+      const firstVal = firstKey ? t1[firstKey] : null;
+      const nested = firstVal && typeof firstVal === 'object' && !('id' in firstVal) && !('amount' in firstVal) && !('from' in firstVal) && !('to' in firstVal);
+      if(nested){
+        Object.keys(t1).forEach(uid=>{
+          total += safeLen(t1[uid]);
+        });
+      }else{
+        total = safeLen(t1);
+      }
+      return { total };
+    }
+
+    /* Render */
+    function renderMetrics(U,D,W,L,T){
+      const box = $("#metrics");
+      const empty=$("#empty1");
+      if(!box || !empty) return;
+      box.innerHTML = '';
+
+      const rows = [
+        {
+          icon:'groups',
+          title:'إجمالي المستخدمين',
+          primary: U.total.toLocaleString('ar-EG'),
+          extra:'—'
+        },
+        {
+          icon:'trending_up',
+          title:(U.mode==='fresh'?'جدد خلال 48 ساعة':'أحدث المستخدمين (لا يوجد جدد خلال 48 ساعة)'),
+          primary: (U.mode==='fresh'? U.fresh48.length : U.showList.length).toLocaleString('ar-EG'),
+          extra: (U.total ? (((U.mode==='fresh'? U.fresh48.length : U.showList.length)*100/U.total).toFixed(1)+'%') : '0%')
+        },
+        {
+          icon:'account_balance',
+          title:'الإيداعات (آخر 90 يوم)',
+          primary: D.count90.toLocaleString('ar-EG'),
+          extra: 'مودعين فريدين: ' + D.unique90.toLocaleString('ar-EG')
+        },
+        {
+          icon:'payments',
+          title:'السحوبات (آخر 90 يوم)',
+          primary: W.count90.toLocaleString('ar-EG'),
+          extra:'—'
+        },
+        {
+          icon:'account_tree',
+          title:'قيود الرصيد → العقد',
+          primary: L.total.toLocaleString('ar-EG'),
+          extra:'كل الوقت'
+        },
+        {
+          icon:'sync_alt',
+          title:'التحويلات',
+          primary: T.total.toLocaleString('ar-EG'),
+          extra:'كل الوقت'
+        }
+      ];
+
+      rows.forEach(r=>{
+        const d=document.createElement('div');
+        d.className='row';
+        d.innerHTML = `
+          <span class="ms">${r.icon}</span>
+          <span class="name">${r.title}</span>
+          <span class="sep">·</span>
+          <span class="amt">${r.primary}</span>
+          <span class="sep">·</span>
+          <span class="badge">${r.extra}</span>
+        `;
+        box.appendChild(d);
+      });
+
+      empty.style.display = rows.length ? 'none' : 'block';
+    }
+
+    function renderNewUsers(list){
+      const box = $("#newUsers");
+      const empty=$("#empty2");
+      const newCount=$("#newCount");
+      if(!box || !empty || !newCount) return;
+
+      box.innerHTML = '';
+      if(!list.length){ empty.style.display='block'; newCount.textContent='0'; return; }
+      empty.style.display='none';
+      newCount.textContent = list.length.toLocaleString('ar-EG');
+
+      list.slice(0,100).forEach(u=>{
+        const d=document.createElement('div');
+        d.className='row';
+        d.innerHTML = `
+          <span class="ms">person</span>
+          <span class="name" title="${u.name}">${u.name}</span>
+          <span class="sep">·</span>
+          <span class="idtxt">${u.idtxt||'-'}</span>
+          <span class="sep">·</span>
+          <span class="time">${u.tsLocal}</span>
+          <span class="sep">·</span>
+          <span class="badge">جديد</span>
+        `;
+        box.appendChild(d);
+      });
+    }
+
+    /* Load All */
+    async function loadAll(showToast){
+      try{
+        const [U,D,W,L,T] = await Promise.all([
+          loadUsers(), loadDeposits(), loadWithdrawals(), loadLocked(), loadTransfers()
+        ]);
+        renderMetrics(U,D,W,L,T);
+        renderNewUsers(U.showList);
+        if(showToast) toast('تم التحديث');
+      }catch(e){
+        console.error(e);
+        toast('تعذّر تحميل الإحصاءات');
+      }
+    }
+
+    // أول تشغيل + تحديث تلقائي
+    loadAll(false);
+    setInterval(()=>loadAll(false), AUTO_REFRESH_MS);
+  })();
+  </script>
+
   <script>
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("service-worker.js")
       .then(reg => console.log("✔ Service Worker registered"))
       .catch(err => console.error("❌ Service Worker failed:", err));
   }
-</script>
-  
-  
+  </script>
 </body>
 </html>

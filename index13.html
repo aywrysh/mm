@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة الشريك – الإعلانات</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
+
+<style>
+:root{
+  --accent:#F36523; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb; --card:#fff; --bg:#f7f8fa;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--ink)}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+.top{position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900}
+.brand .dot{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+.grid{display:grid;grid-template-columns:1.4fr .6fr;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+h3{margin:0 0 10px;font-weight:900}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row-1{display:grid;grid-template-columns:1fr;gap:10px}
+label{font-weight:800;font-size:13px;color:#374151;display:block;margin:2px 0}
+input[type="text"],input[type="url"],textarea{
+  width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-family:inherit;
+}
+textarea{min-height:110px;resize:vertical}
+.badge{padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-weight:800;font-size:12px;background:#f9fafb}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-weight:900}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.warn{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+.small{font-size:12px;color:var(--muted)}
+hr{border:none;border-top:1px solid var(--line);margin:12px 0}
+.list{display:grid;gap:8px;max-height:56vh;overflow:auto}
+.item{display:flex;align-items:start;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+.item .grow{flex:1}
+.kv{display:flex;gap:8px;flex-wrap:wrap}
+.kv .k{font-weight:900}
+.switch{display:flex;align-items:center;gap:6px}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f172a;color:#fff;border-radius:10px;padding:10px;font-size:12px;overflow:auto}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) scale(.96);background:rgba(17,17,17,.92);color:#fff;padding:8px 12px;border-radius:10px;font-weight:800;font-size:12px;opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;z-index:30}
+.toast.show{opacity:1;transform:translateX(-50%) scale(1)}
+.help{font-size:12px;color:#6b7280}
+.radio{display:flex;gap:10px;flex-wrap:wrap}
+.radio label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;cursor:pointer}
+.radio input{accent-color:var(--accent)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand"><span class="dot"></span><span>لوحة الشريك — الإعلانات</span></div>
+    </div>
+
+    <div class="grid">
+      <!-- النموذج -->
+      <section class="card">
+        <h3>إنشاء / تعديل إعلان</h3>
+
+        <div class="radio">
+          <label><input type="radio" name="aud" value="global" checked> <span>إعلان عام</span></label>
+          <label><input type="radio" name="aud" value="uid"> <span>موجّه حسب UID</span></label>
+          <label><input type="radio" name="aud" value="accountId"> <span>موجّه حسب AccountID</span></label>
+        </div>
+
+        <div class="row" id="targetRow" style="display:none">
+          <div>
+            <label>UID (عند اختيار موجّه)</label>
+            <input type="text" id="uid" placeholder="abc123...">
+          </div>
+          <div>
+            <label>AccountID (بديل للموجّه)</label>
+            <input type="text" id="accountId" placeholder="1002345">
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="row">
+          <div>
+            <label>العنوان (AR)</label>
+            <input type="text" id="title_ar" placeholder="عنوان عربي">
+          </div>
+          <div>
+            <label>Title (EN)</label>
+            <input type="text" id="title_en" placeholder="English title">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>المحتوى (AR)</label>
+            <textarea id="body_ar" placeholder="نص عربي... سطور متعددة"></textarea>
+          </div>
+          <div>
+            <label>Content (EN)</label>
+            <textarea id="body_en" placeholder="English text... multiline"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>نص الزر (AR) — اختياري</label>
+            <input type="text" id="btn_ar" placeholder="مثال: فتح">
+          </div>
+          <div>
+            <label>Button text (EN) — optional</label>
+            <input type="text" id="btn_en" placeholder="e.g. Open">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>رابط الزر — اختياري</label>
+            <input type="url" id="btn_url" placeholder="https://...">
+          </div>
+          <div>
+            <label>صورة (رابط) — اختياري</label>
+            <input type="url" id="image" placeholder="https://.../banner.png">
+          </div>
+        </div>
+
+        <div class="opts">
+          <label class="switch"><input type="checkbox" id="enabled" checked> <span>تشغيل الإعلان</span></label>
+          <label class="switch"><input type="checkbox" id="everyOpen"> <span>أظهره كل فتح للتطبيق</span></label>
+        </div>
+
+        <div class="btns">
+          <button class="btn" id="previewBtn">معاينة JSON</button>
+          <button class="btn primary" id="publishBtn">حفظ / نشر</button>
+          <button class="btn warn" id="disableBtn">تعطيل الإعلان</button>
+        </div>
+
+        <p class="help">* لو اخترت “موجّه”: اكتب **UID** أو **AccountID** (أحدهما يكفي).  
+        * “أظهره كل فتح” تتجاهل “عدم الإظهار مجددًا”.</p>
+
+        <div class="code" id="jsonBox" style="display:none"></div>
+      </section>
+
+      <!-- آخر الإعلانات / إدارة سريعة -->
+      <aside class="card">
+        <h3>آخر ما تم نشره</h3>
+        <div class="list" id="list"></div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+(function(){
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const toast = m => { const t=$("#toast"); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1400); };
+
+  // ===== Firebase =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+    authDomain: "dynex-f4486.firebaseapp.com",
+    databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+    projectId: "dynex-f4486",
+    storageBucket: "dynex-f4486.firebasestorage.app"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db=firebase.database();
+
+  // ===== عناصر =====
+  const audios = $$("input[name='aud']");
+  const targetRow = $("#targetRow");
+  const uid = $("#uid"), accountId=$("#accountId");
+  const title_ar=$("#title_ar"), title_en=$("#title_en");
+  const body_ar=$("#body_ar"), body_en=$("#body_en");
+  const btn_ar=$("#btn_ar"), btn_en=$("#btn_en"), btn_url=$("#btn_url");
+  const image=$("#image"), enabled=$("#enabled"), everyOpen=$("#everyOpen");
+  const jsonBox=$("#jsonBox");
+  const list=$("#list");
+
+  // أدوات
+  const getAudience = () => (audios.find(r=>r.checked)?.value || 'global');
+  const cleanKey = (k)=> String(k||'').trim().replace(/[.#$\[\]\/]/g,''); // مفتاح صالح للـ RTDB
+  const asStr = (v)=> String(v==null?'':v).trim();
+
+  // تبديل إظهار حقول الهدف
+  function updateAudience(){
+    const val = getAudience();
+    targetRow.style.display = (val==='uid' || val==='accountId') ? 'grid' : 'none';
+  }
+  audios.forEach(r=>r.addEventListener('change', updateAudience));
+  updateAudience();
+
+  function buildPayload(){
+    const id = `ann-${Date.now()}`;
+    return {
+      id,
+      enabled: !!enabled.checked,
+      everyOpen: !!everyOpen.checked,
+      title:  { ar: asStr(title_ar.value), en: asStr(title_en.value) },
+      body:   { ar: asStr(body_ar.value),  en: asStr(body_en.value)  },
+      btnText:{ ar: asStr(btn_ar.value),   en: asStr(btn_en.value)   },
+      btnUrl: asStr(btn_url.value),
+      image:  asStr(image.value),
+      updatedAt: firebase.database.ServerValue.TIMESTAMP
+    };
+  }
+
+  // توجيه صارم: إمّا global أو uid أو accountId بالضبط
+  function strictPath(){
+    const mode = getAudience();
+    if(mode==='global'){
+      return { path: 'announcements/global', label:'عام' };
+    }
+    if(mode==='uid'){
+      const k = cleanKey(uid.value);
+      if(!k){ toast('الرجاء إدخال UID'); return null; }
+      return { path: `announcements/targetByUid/${k}/latest`, label:'موجّه (UID)' };
+    }
+    if(mode==='accountId'){
+      const k = cleanKey(accountId.value);
+      if(!k){ toast('الرجاء إدخال AccountID'); return null; }
+      return { path: `announcements/targetByAccountId/${k}/latest`, label:'موجّه (AccountID)' };
+    }
+    return null;
+  }
+
+  // معاينة JSON
+  $("#previewBtn").addEventListener('click', ()=>{
+    const p = buildPayload();
+    jsonBox.style.display='block';
+    jsonBox.textContent = JSON.stringify(p, null, 2);
+  });
+
+  // نشر/حفظ (SET على المسار المحدد فقط)
+  $("#publishBtn").addEventListener('click', async ()=>{
+    const dest = strictPath();
+    if(!dest) return;
+    const p = buildPayload();
+
+    try{
+      await db.ref(dest.path).set(p);
+      toast('تم الحفظ/النشر ✔');
+      jsonBox.style.display='block';
+      jsonBox.textContent = JSON.stringify({path:dest.path, ...p}, null, 2);
+      fetchLatest();
+    }catch(err){
+      console.error(err);
+      toast('تعذّر النشر');
+    }
+  });
+
+  // تعطيل الإعلان في نفس المسار المُختار
+  $("#disableBtn").addEventListener('click', async ()=>{
+    const dest = strictPath();
+    if(!dest) return;
+    try{
+      await db.ref(dest.path+'/enabled').set(false);
+      toast('تم التعطيل');
+      fetchLatest();
+    }catch(err){
+      console.error(err);
+      toast('تعذّر التعطيل');
+    }
+  });
+
+  // تحميل آخر العناصر للوحة اليمنى (كما هو مع تحسينات طفيفة)
+  async function fetchLatest(){
+    list.innerHTML = '';
+
+    // العام
+    const g = await db.ref('announcements/global').get().catch(()=>null);
+    if(g && g.exists()){
+      list.appendChild(renderItem('عام', 'announcements/global', g.val()));
+    }
+
+    // آخر 20 موجّه بالـ UID
+    const tu = await db.ref('announcements/targetByUid').limitToFirst(300).get().catch(()=>null);
+    if(tu && tu.exists()){
+      Object.entries(tu.val()).slice(-20).reverse().forEach(([key, val])=>{
+        if(val && val.latest) list.appendChild(renderItem('UID: '+key, `announcements/targetByUid/${key}/latest`, val.latest));
+      });
+    }
+
+    // آخر 20 موجّه بالـ AccountID
+    const ta = await db.ref('announcements/targetByAccountId').limitToFirst(300).get().catch(()=>null);
+    if(ta && ta.exists()){
+      Object.entries(ta.val()).slice(-20).reverse().forEach(([key, val])=>{
+        if(val && val.latest) list.appendChild(renderItem('AccountID: '+key, `announcements/targetByAccountId/${key}/latest`, val.latest));
+      });
+    }
+
+    if(!list.children.length){
+      const d=document.createElement('div');
+      d.className='item';
+      d.innerHTML='<div class="grow">لا توجد بيانات.</div>';
+      list.appendChild(d);
+    }
+  }
+
+  function renderItem(label, path, ann){
+    const d=document.createElement('div'); d.className='item';
+    const ts = Number(ann.updatedAt||0);
+    const when = ts ? new Date(ts).toLocaleString('ar-EG', {hour12:false}) : '-';
+    const enabled = ann.enabled===true ? '<span class="badge">مُفعّل</span>' : '<span class="badge">معطّل</span>';
+    d.innerHTML = `
+      <div class="grow">
+        <div class="kv">
+          <span class="k">${label}</span>
+          ${enabled}
+          ${ann.everyOpen ? '<span class="badge">كل فتح</span>' : ''}
+        </div>
+        <div class="small" style="margin-top:4px">آخر تحديث: ${when}</div>
+        <div class="small" style="margin-top:6px">
+          <b>AR:</b> ${escapeHtml(ann?.title?.ar||ann.title||'')} — ${truncate(ann?.body?.ar||ann.body||'', 80)}<br>
+          <b>EN:</b> ${escapeHtml(ann?.title?.en||'')} — ${truncate(ann?.body?.en||'', 80)}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn" data-act="load"  data-path="${path}">تحميل للنموذج</button>
+        <button class="btn warn" data-act="disable" data-path="${path}">تعطيل</button>
+      </div>
+    `;
+    return d;
+  }
+
+  function truncate(s, n){ s=String(s||''); return s.length>n ? s.slice(0,n)+'…' : s; }
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
+
+  // تفويض أزرار القائمة (تحميل/تعطيل)
+  list.addEventListener('click', async (e)=>{
+    const btn = e.target.closest('button[data-act]');
+    if(!btn) return;
+    const act = btn.dataset.act, path = btn.dataset.path;
+    if(act==='disable'){
+      try{ await db.ref(path+'/enabled').set(false); toast('تم التعطيل'); fetchLatest(); }catch(err){ toast('خطأ'); }
+    }
+    if(act==='load'){
+      try{
+        const snap = await db.ref(path).get();
+        if(!snap.exists()) return toast('غير موجود');
+        const v = snap.val();
+
+        // تحديد نوع الهدف من المسار
+        if(path==='announcements/global'){
+          audios.find(r=>r.value==='global').checked=true;
+          updateAudience();
+          uid.value=''; accountId.value='';
+        }else if(path.includes('/targetByUid/')){
+          audios.find(r=>r.value==='uid').checked=true;
+          updateAudience();
+          uid.value = path.split('/targetByUid/')[1].split('/')[0]; accountId.value='';
+        }else{
+          audios.find(r=>r.value==='accountId').checked=true;
+          updateAudience();
+          accountId.value = path.split('/targetByAccountId/')[1].split('/')[0]; uid.value='';
+        }
+
+        // عبئ الحقول
+        enabled.checked = (v.enabled!==false);
+        everyOpen.checked = !!v.everyOpen;
+        title_ar.value = v?.title?.ar || v?.title || '';
+        title_en.value = v?.title?.en || '';
+        body_ar.value  = v?.body?.ar  || v?.body  || '';
+        body_en.value  = v?.body?.en  || '';
+        btn_ar.value   = v?.btnText?.ar || v?.btnText || '';
+        btn_en.value   = v?.btnText?.en || '';
+        btn_url.value  = v?.btnUrl || '';
+        image.value    = v?.image || '';
+
+        toast('تم تحميل الحقول');
+        jsonBox.style.display='block';
+        jsonBox.textContent = JSON.stringify(v, null, 2);
+      }catch(err){
+        console.error(err);
+        toast('تعذّر التحميل');
+      }
+    }
+  });
+
+  fetchLatest();
+})();
+</script>
+</body>
+</html>

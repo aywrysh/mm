@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>إيداعات (مبسّط)</title>
+  <title>إحصاءات الشريك (مبسّط)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
@@ -30,26 +30,28 @@
     .wrap{padding:calc(var(--top) + 14px) 10px 16px; max-width:1100px; margin:0 auto}
     .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px}
 
-    /* القائمة الخطّية */
+    /* القائمة الخطّية (نفس ستايل صفحة الإيداعات) */
     .list{
       display:grid; gap:6px;
-      overflow-x:auto;                 /* NEW: تمكين السحب الأفقي */
-      -webkit-overflow-scrolling:touch;/* NEW: سحب ناعم على الجوال */
-      padding-bottom:4px;              /* NEW: مساحة صغيرة تحت للسكرول */
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      padding-bottom:4px;
     }
     .row{
       display:flex; align-items:center; gap:8px; padding:8px 10px;
       border:1px solid var(--line); border-radius:10px; background:#fff;
       font-weight:700; font-size:14px; white-space:nowrap;
-      /* كان هنا overflow:hidden; text-overflow:ellipsis وتمت إزالتهما */
-      width:max-content;               /* NEW: عرض السطر = عرض المحتوى */
-      min-width:680px;                 /* NEW: أقل عرض للسطر (عدّل لو حبيت) */
+      width:max-content;
+      min-width:680px;
     }
     .name{max-width:26ch; overflow:hidden; text-overflow:ellipsis}
     .sep{opacity:.5}
     .amt{font-weight:900}
     .time{color:var(--muted); font-weight:700}
     .idtxt{direction:ltr}
+    .badge{
+      padding:2px 8px; border-radius:999px; border:1px solid var(--line); font-size:11px; font-weight:900; color:#0f172a; background:#f9fafb
+    }
 
     /* شريط أدوات بسيط */
     .tools{display:flex; gap:8px; align-items:center; margin:0 0 10px}
@@ -57,7 +59,6 @@
     .live-ok{background:#f0fdf4; border-color:#dcfce7}
     .live-bad{background:#fff1f1; border-color:#ffe4e6}
 
-    /* توست */
     .toast{
       position:fixed; bottom:18px; left:50%; transform:translateX(-50%) scale(.96);
       background:rgba(17,17,17,.92); color:#fff; padding:8px 12px; border-radius:10px; font-weight:800; font-size:12px;
@@ -65,47 +66,49 @@
     }
     .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
 
-    /* فراغ */
     .empty{padding:14px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:10px}
-
-    /* أزرار العمليات داخل كل سطر */
-    .ops{margin-inline-start:auto; display:flex; gap:6px}
-    .op{
-      padding:5px 8px; border:1px solid var(--line); border-radius:8px;
-      background:#fff; cursor:pointer; font-size:12px; font-weight:800; display:inline-flex; align-items:center; gap:4px;
-    }
-    .op.approve{background:#ecfeff; border-color:#bae6fd}
-    .op.delete{background:#fff1f1; border-color:#ffe4e6}
-    .badge{
-      padding:2px 8px; border-radius:999px; border:1px solid var(--line); font-size:11px; font-weight:900; color:#0f172a; background:#f9fafb
-    }
   </style>
-  
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#BBCF38">
-  
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
 </head>
 <body>
 
   <!-- الشريط العلوي -->
   <header class="topbar">
-    <div class="brand"><span class="dot"></span><span>نظام الشركة</span></div>
+    <div class="brand"><span class="dot"></span><span>إحصاءات الشريك</span></div>
     <div style="display:flex; gap:8px; align-items:center">
       <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
       <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
     </div>
   </header>
 
-  <!-- المحتوى -->
   <main class="wrap">
+
+    <!-- الكارت الرئيسي: الأرقام المجمّعة -->
     <section class="card">
       <div class="tools">
         <div id="live" class="pill live-ok"><span class="ms">online_prediction</span><span>متصل</span></div>
         <div class="pill" title="تحديث تلقائي"><span class="ms">schedule</span>10s</div>
       </div>
-      <div id="list" class="list"></div>
-      <div id="empty" class="empty" style="display:none">لا توجد بيانات.</div>
+
+      <div id="metrics" class="list"></div>
+      <div id="empty1" class="empty" style="display:none">لا توجد بيانات.</div>
     </section>
+
+    <!-- المستخدمون الجدد (آخر 48 ساعة) -->
+    <section class="card" style="margin-top:12px">
+      <div class="tools" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ms">person_add</span><b>المستخدمون الجدد – آخر 48 ساعة</b>
+        </div>
+        <div class="pill" id="newCountPill"><span class="ms">groups</span><span id="newCount">—</span></div>
+      </div>
+
+      <div id="newUsers" class="list"></div>
+      <div id="empty2" class="empty" style="display:none">لا يوجد مستخدمون جدد خلال آخر 48 ساعة.</div>
+    </section>
+
   </main>
 
   <div id="toast" class="toast"></div>
@@ -118,7 +121,7 @@
   (function(){
     const $ = s=>document.querySelector(s);
 
-    /* ===== إعدادات Firebase ===== */
+    /* ===== Firebase ===== */
     const firebaseConfig = {
       apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
       authDomain: "dynex-f4486.firebaseapp.com",
@@ -126,16 +129,15 @@
       projectId: "dynex-f4486",
       storageBucket: "dynex-f4486.firebasestorage.app"
     };
-    firebase.initializeApp(firebaseConfig);
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     /* ===== إعدادات الصفحة ===== */
     const DASHBOARD = '/admin/core/dashboard.html';
     const AUTO_REFRESH_MS = 10000;
 
-    // رجوع وتحديث
     $("#backBtn").addEventListener('click', ()=>{ if(history.length>1) history.back(); else window.location.replace(DASHBOARD); });
-    $("#refreshBtn").addEventListener('click', ()=> fetchAndRender(true));
+    $("#refreshBtn").addEventListener('click', ()=> loadAll(true));
 
     function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200); }
     function setLive(ok){
@@ -144,186 +146,223 @@
       live.querySelector('.ms').textContent = ok ? 'online_prediction' : 'report_gmailerrorred';
       live.lastChild.textContent = ok ? 'متصل' : 'غير متصل';
     }
-
-    // مراقبة الاتصال بالقاعدة
     db.ref(".info/connected").on("value", s=> setLive(!!s.val()));
 
-    // كاش بيانات المستخدم
-    const userCache = new Map();
-    async function fetchUser(uid){
-      if(!uid) return null;
-      if(userCache.has(uid)) return userCache.get(uid);
-      const snap = await db.ref('users/'+uid).get().catch(()=>null);
-      const val = (snap && snap.exists()) ? snap.val() : null;
-      userCache.set(uid, val);
-      return val;
+    /* ===== Helpers ===== */
+    const now = ()=> Date.now();
+    const last48Start = ()=> now() - 48*60*60*1000;
+    const last90Start = ()=> now() - 90*24*60*60*1000;
+    const safeLen = o => (o ? Object.keys(o).length : 0);
+
+    // استخرج توقيت إنشاء المستخدم من أكثر من حقل
+    function getUserTs(u){
+      if(!u) return 0;
+      if(typeof u.created_ts === 'number') return u.created_ts;
+      if(u.created_at){ const t=Date.parse(u.created_at); if(!isNaN(t)) return t; }
+      if(u.signupAt){ const t=Date.parse(u.signupAt); if(!isNaN(t)) return t; }
+      if(u.joinedAt){ const t=Date.parse(u.joinedAt); if(!isNaN(t)) return t; }
+      return 0;
     }
 
-    // قراءة الإيداعات
-    async function fetchDeposits(){
-      const rows = [];
+    // جرّب أكثر من مسار للجدول لو تغيّر اسمه
+    async function getPathAny(paths){
+      for(const p of paths){
+        try{ const s=await db.ref(p).get(); if(s.exists()) return {path:p, data:s.val()}; }catch(_){}
+      }
+      return {path:paths[0], data:null};
+    }
 
-      const snapLinked = await db.ref('deposits').get().catch(()=>null);
-      if (snapLinked && snapLinked.exists()){
-        const obj = snapLinked.val();
-        Object.keys(obj).forEach(uid=>{
-          const children = obj[uid] || {};
-          Object.keys(children).forEach(k=>{
-            rows.push(mapRow(children[k], `deposits/${uid}/${k}`));
+    /* ===== Queries ===== */
+    async function loadUsers(){
+      const snap = await db.ref('users').get().catch(()=>null);
+      const users = (snap && snap.exists()) ? snap.val() : {};
+      const total = safeLen(users);
+
+      const fresh = [];
+      const start48 = last48Start();
+      for(const id in users){
+        const u = users[id]||{};
+        const ts = getUserTs(u);
+        if(ts && ts >= start48){
+          fresh.push({
+            id, name:(u.name||u.username||'—'),
+            username:u.username||null, phone:u.phone||null,
+            ts, tsLocal:new Date(ts).toLocaleString()
+          });
+        }
+      }
+      fresh.sort((a,b)=> b.ts - a.ts);
+      return { total, fresh48:fresh };
+    }
+
+    async function loadDeposits(){
+      const {data:deps1} = await getPathAny(['deposits']);
+      const {data:deps2} = await getPathAny(['deposits_unlinked']);
+      const start = last90Start();
+
+      let count=0;
+      const uniq = new Set();
+
+      // linked deposits: /deposits/{uid}/{depId}
+      if(deps1){
+        Object.keys(deps1).forEach(uid=>{
+          const items = deps1[uid]||{};
+          Object.keys(items).forEach(k=>{
+            const d = items[k]||{};
+            const t = (typeof d.createdAt==='number') ? d.createdAt :
+                      (d.createdAt? Date.parse(d.createdAt): (typeof d.clientTime==='number'? d.clientTime : NaN));
+            if(!isNaN(t) && t>=start){ count++; if(uid) uniq.add(String(uid)); }
           });
         });
       }
-
-      const snapUn = await db.ref('deposits_unlinked').get().catch(()=>null);
-      if (snapUn && snapUn.exists()){
-        const children = snapUn.val();
-        Object.keys(children).forEach(k=>{
-          rows.push(mapRow(children[k], `deposits_unlinked/${k}`));
+      // unlinked: /deposits_unlinked/{id}
+      if(deps2){
+        Object.keys(deps2).forEach(k=>{
+          const d = deps2[k]||{};
+          const t = (typeof d.createdAt==='number') ? d.createdAt :
+                    (d.createdAt? Date.parse(d.createdAt): (typeof d.clientTime==='number'? d.clientTime : NaN));
+          if(!isNaN(t) && t>=start){ count++; if(d.uid) uniq.add(String(d.uid)); }
         });
       }
+      return { count90:count, unique90:uniq.size };
+    }
 
-      // استكمال الاسم/ID من users عند الحاجة
-      const need = [...new Set(rows.filter(r=>((!r.name || r.name==='—') || !r.accountId) && r.uid).map(r=>r.uid))];
-      await Promise.all(need.map(async uid=>{
-        const u = await fetchUser(uid);
-        rows.forEach(r=>{
-          if(r.uid===uid){
-            if((!r.name || r.name==='—') && u && u.name) r.name = u.name;
-            if(!r.accountId && u && u.accountId) r.accountId = u.accountId;
-          }
+    async function loadWithdrawals(){
+      const {data:w1} = await getPathAny(['withdrawals','withdraws','payouts']);
+      const start = last90Start();
+      let count=0;
+      if(w1){
+        Object.keys(w1).forEach(k=>{
+          const r = w1[k]||{};
+          const t = r.created_ts ?? Date.parse(r.created_at||r.time||r.at||'');
+          if(!isNaN(t) && t>=start) count++;
         });
-      }));
-
-      rows.sort((a,b)=> (b.ts||0) - (a.ts||0));
-      return rows;
+      }
+      return { count90:count };
     }
 
-    function mapRow(r, keyPath){
-      const netName = r.networkName || r.network || r.net || '';
-      const chain   = r.chain || r.networkChain || '';
-      const net     = (netName ? netName : '') + (chain ? `-${chain}` : '');
-
-      let tsMs = null;
-      if (typeof r.createdAt === 'number') tsMs = r.createdAt;
-      else if (typeof r.createdAt === 'string') tsMs = Date.parse(r.createdAt);
-      else if (typeof r.clientTime === 'number') tsMs = r.clientTime;
-
-      return {
-        key: keyPath,
-        uid: r.uid || null,
-        name: r.name || '—',
-        accountId: r.accountId || null,
-        net:  net || '—',
-        amt:  Number(r.amount ?? 0),
-        ts:   tsMs,
-        tsLocal: tsMs ? new Date(tsMs).toLocaleString() : '-',
-        status: r.status || 'pending'
-      };
+    async function loadLocked(){
+      const {data:l1} = await getPathAny(['balance_to_locked','balance-to-locked','locked_entries','constraints_locked']);
+      return { total: safeLen(l1||{}) };
     }
 
-    function fmtAmt(n){ return Number(n||0).toFixed(2); }
+    async function loadTransfers(){
+      const {data:t1} = await getPathAny(['transfers','transfers_all','p2p_transfers']);
+      return { total: safeLen(t1||{}) };
+    }
 
-    function render(rows){
-      const cont = $("#list"), empty=$("#empty");
-      cont.innerHTML = '';
+    /* ===== Render ===== */
+    function renderMetrics(U,D,W,L,T){
+      const box = $("#metrics"); const empty=$("#empty1");
+      box.innerHTML = '';
+      const rows = [
+        {
+          icon:'groups',
+          title:'إجمالي المستخدمين',
+          primary: U.total.toLocaleString('ar-EG'),
+          extra:'—'
+        },
+        {
+          icon:'trending_up',
+          title:'جدد خلال 48 ساعة',
+          primary: U.fresh48.length.toLocaleString('ar-EG'),
+          extra: (U.total ? ((U.fresh48.length*100/U.total).toFixed(1)+'%') : '0%')
+        },
+        {
+          icon:'account_balance',
+          title:'الإيداعات (آخر 90 يوم)',
+          primary: D.count90.toLocaleString('ar-EG'),
+          extra: 'مودعين فريدين: ' + D.unique90.toLocaleString('ar-EG')
+        },
+        {
+          icon:'payments',
+          title:'السحوبات (آخر 90 يوم)',
+          primary: W.count90.toLocaleString('ar-EG'),
+          extra:'—'
+        },
+        {
+          icon:'account_tree',
+          title:'قيود الرصيد → العقد',
+          primary: L.total.toLocaleString('ar-EG'),
+          extra:'كل الوقت'
+        },
+        {
+          icon:'sync_alt',
+          title:'التحويلات',
+          primary: T.total.toLocaleString('ar-EG'),
+          extra:'كل الوقت'
+        }
+      ];
 
-      if(!rows.length){ empty.style.display='block'; return; }
-      empty.style.display='none';
-
-      rows.forEach(x=>{
-        const idText = x.accountId ? String(x.accountId) : (x.uid ? String(x.uid) : '-');
-        const d = document.createElement('div');
-        d.className = 'row';
-        d.dataset.key = x.key;
+      rows.forEach(r=>{
+        const d=document.createElement('div');
+        d.className='row';
         d.innerHTML = `
-          <span class="name">${x.name}</span>
+          <span class="ms">${r.icon}</span>
+          <span class="name">${r.title}</span>
           <span class="sep">·</span>
-          <span class="idtxt">${idText}</span>
+          <span class="amt">${r.primary}</span>
           <span class="sep">·</span>
-          <span>${x.net}</span>
-          <span class="sep">·</span>
-          <span class="amt">${fmtAmt(x.amt)}</span>
-          <span class="sep">·</span>
-          <span class="time">${x.tsLocal}</span>
-          <span class="sep">·</span>
-          <span class="badge">${x.status === 'approved' ? 'معتمد' : 'قيد المراجعة'}</span>
-          <div class="ops">
-            <button class="op approve" title="اعتماد"><span class="ms">check</span>اعتماد</button>
-            <button class="op delete"  title="حذف"><span class="ms">delete</span>حذف</button>
-          </div>
+          <span class="badge">${r.extra}</span>
         `;
-        cont.appendChild(d);
+        box.appendChild(d);
+      });
+
+      empty.style.display = rows.length ? 'none' : 'block';
+    }
+
+    function renderNewUsers(list){
+      const box = $("#newUsers"); const empty=$("#empty2");
+      box.innerHTML = '';
+      if(!list.length){ empty.style.display='block'; $("#newCount").textContent='0'; return; }
+      empty.style.display='none';
+      $("#newCount").textContent = list.length.toLocaleString('ar-EG');
+
+      list.slice(0,50).forEach(u=>{
+        const d=document.createElement('div');
+        d.className='row';
+        const idtxt = u.username ? ('@'+u.username) : (u.phone ? u.phone : u.id);
+        d.innerHTML = `
+          <span class="ms">person</span>
+          <span class="name">${u.name}</span>
+          <span class="sep">·</span>
+          <span class="idtxt">${idtxt||'-'}</span>
+          <span class="sep">·</span>
+          <span class="time">${u.tsLocal}</span>
+          <span class="sep">·</span>
+          <span class="badge">جديد</span>
+        `;
+        box.appendChild(d);
       });
     }
 
-    // اعتماد
-    async function approveDeposit(key){
-      await db.ref(key).update({
-        status: 'approved',
-        approvedAt: firebase.database.ServerValue.TIMESTAMP
-      });
-    }
-
-    // حذف
-    async function deleteDeposit(key){
-      await db.ref(key).remove();
-    }
-
-    // عمليات الأزرار
-    $("#list").addEventListener('click', async (e)=>{
-      const btnApprove = e.target.closest('.op.approve');
-      const btnDelete  = e.target.closest('.op.delete');
-      const row = e.target.closest('.row');
-      if(!row) return;
-      const key = row.dataset.key;
-
+    /* ===== Load All ===== */
+    async function loadAll(showToast){
       try{
-        if(btnApprove){
-          btnApprove.disabled = true;
-          await approveDeposit(key);
-          const badge = row.querySelector('.badge');
-          if(badge) badge.textContent = 'معتمد';
-          toast('تم الاعتماد');
-        }
-        if(btnDelete){
-          btnDelete.disabled = true;
-          await deleteDeposit(key);
-          row.remove();
-          if(!$("#list").children.length) $("#empty").style.display='block';
-          toast('تم الحذف');
-        }
-      }catch(err){
-        console.error(err);
-        toast('تعذّر التنفيذ');
-        if(btnApprove) btnApprove.disabled = false;
-        if(btnDelete)  btnDelete.disabled  = false;
-      }
-    });
-
-    async function fetchAndRender(showToast){
-      try{
-        const rows = await fetchDeposits();
-        render(rows);
+        const [U,D,W,L,T] = await Promise.all([
+          loadUsers(), loadDeposits(), loadWithdrawals(), loadLocked(), loadTransfers()
+        ]);
+        renderMetrics(U,D,W,L,T);
+        renderNewUsers(U.fresh48);
         if(showToast) toast('تم التحديث');
       }catch(e){
         console.error(e);
-        toast('تعذّر الاتصال');
+        toast('تعذّر تحميل الإحصاءات');
       }
     }
 
-    // تشغيل
-    fetchAndRender(false);
-    setInterval(()=>fetchAndRender(false), AUTO_REFRESH_MS);
+    // أول تشغيل + تحديث تلقائي
+    loadAll(false);
+    setInterval(()=>loadAll(false), AUTO_REFRESH_MS);
   })();
   </script>
-  
+
   <script>
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("service-worker.js")
       .then(reg => console.log("✔ Service Worker registered"))
       .catch(err => console.error("❌ Service Worker failed:", err));
   }
-</script>
-  
+  </script>
 </body>
 </html>
