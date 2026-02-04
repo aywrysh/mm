@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>السحوبات (لوحة الشركة)</title>
+  <title>الإيداعات والسحوبات - لوحة الشركة</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
@@ -11,12 +11,11 @@
   <style>
     :root{
       --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
-      --bg:#f7f8fa; --card:#fff; --top:56px; --ok:#16a34a; --no:#ef4444;
+      --bg:#f7f8fa; --card:#fff; --top:56px; --ok:#16a34a; --no:#ef4444; --deposit:#3b82f6; --withdraw:#f59e0b;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
 
-    /* الشريط العلوي */
     .topbar{
       position:fixed; inset-inline:0; top:0; height:var(--top); background:var(--card);
       border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 12px; z-index:10;
@@ -26,23 +25,26 @@
     .btn{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer}
     .ms{font-family:'Material Symbols Rounded'}
 
-    /* المحتوى */
     .wrap{padding:calc(var(--top) + 14px) 10px 18px; max-width:1100px; margin:0 auto}
     .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px}
 
-    /* أدوات */
     .tools{display:flex; gap:8px; align-items:center; margin:0 0 12px; flex-wrap:wrap}
     .pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; font-weight:800; font-size:12px}
     .live-ok{background:#f0fdf4; border-color:#dcfce7}
     .live-bad{background:#fff1f1; border-color:#ffe4e6}
+    .tab{display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border:2px solid var(--line); border-radius:999px; background:#fff; font-weight:800; cursor:pointer; transition:all 0.2s}
+    .tab.active{background:var(--accent); color:var(--ink); border-color:var(--accent)}
+    .tab-deposit.active{background:var(--deposit); color:white; border-color:var(--deposit)}
+    .tab-withdraw.active{background:var(--withdraw); color:white; border-color:var(--withdraw)}
 
-    /* القائمة الخطية */
     .list{display:grid; gap:8px}
     .row{
       display:flex; align-items:center; gap:10px; padding:10px 12px;
       border:1px solid var(--line); border-radius:12px; background:#fff;
       font-weight:700; font-size:14px; flex-wrap:wrap;
     }
+    .row-deposit{border-right:3px solid var(--deposit)}
+    .row-withdraw{border-right:3px solid var(--withdraw)}
     .main{display:flex; gap:8px; align-items:center; min-width:280px; flex:1 1 520px; overflow:hidden; white-space:nowrap}
     .name{max-width:20ch; overflow:hidden; text-overflow:ellipsis}
     .id{color:var(--muted)}
@@ -51,6 +53,7 @@
     .time{color:var(--muted); font-weight:700}
     .net{padding:4px 8px; border-radius:999px; border:1px solid var(--line); background:#fafafa; font-weight:900; font-size:12px}
     .addr{font:600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#f8fafc; border:1px dashed var(--line); padding:3px 6px; border-radius:8px}
+    .account-id{font:600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#f0f9ff; border:1px solid #bae6fd; padding:3px 6px; border-radius:8px; color:#0369a1}
     .actions{display:flex; gap:8px}
     .chip{padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; font-weight:800; cursor:pointer}
     .ok{background:var(--ok); color:#fff; border-color:var(--ok)}
@@ -59,8 +62,11 @@
     .badge{padding:6px 10px; border-radius:999px; font-weight:900; font-size:12px}
     .bd-ok{background:#dcfce7; color:#166534}
     .bd-no{background:#fee2e2; color:#991b1b}
+    .bd-pending{background:#fef3c7; color:#92400e}
+    .type-badge{padding:4px 8px; border-radius:999px; font-weight:900; font-size:11px}
+    .type-deposit{background:#dbeafe; color:#1e40af}
+    .type-withdraw{background:#fef3c7; color:#92400e}
 
-    /* فاضي + توست */
     .empty{padding:14px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:10px}
     .toast{
       position:fixed; bottom:18px; left:50%; transform:translateX(-50%) scale(.96);
@@ -70,37 +76,41 @@
     .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
   </style>
   
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#BBCF38">
-  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
 </head>
 <body>
 
-  <!-- الشريط العلوي -->
   <header class="topbar">
-    <div class="brand"><span class="dot"></span><span>نظام الشركة</span></div>
+    <div class="brand"><span class="dot"></span><span>الإيداعات والسحوبات - نظام الشركة</span></div>
     <div style="display:flex; gap:8px; align-items:center">
       <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
       <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
     </div>
   </header>
 
-  <!-- المحتوى -->
   <main class="wrap">
     <section class="card">
       <div class="tools">
         <div id="live" class="pill live-ok"><span class="ms">online_prediction</span><span>متصل</span></div>
+        <div class="tab tab-deposit active" id="tabDeposit">
+          <span class="ms">account_balance_wallet</span>
+          <span>الإيداعات</span>
+        </div>
+        <div class="tab tab-withdraw" id="tabWithdraw">
+          <span class="ms">payments</span>
+          <span>السحوبات</span>
+        </div>
         <div class="pill" title="تحديث لحظي"><span class="ms">bolt</span><span>Realtime</span></div>
       </div>
 
       <div id="list" class="list"></div>
-      <div id="empty" class="empty" style="display:none">لا توجد سحوبات.</div>
+      <div id="empty" class="empty" style="display:none">لا توجد عمليات.</div>
     </section>
   </main>
 
   <div id="toast" class="toast"></div>
 
-  <!-- ✅ Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
@@ -108,7 +118,6 @@
   (function(){
     const $ = s=>document.querySelector(s);
 
-    /* ===== إعداد Firebase ===== */
     const firebaseConfig = {
       apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
       authDomain: "dynex-f4486.firebaseapp.com",
@@ -119,9 +128,22 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    /* ===== واجهة عامة ===== */
     $("#backBtn").addEventListener('click', ()=>{ if(history.length>1) history.back(); else window.location.replace('/admin/core/dashboard.html'); });
     $("#refreshBtn").addEventListener('click', ()=>{ fetchAndRender(true); });
+
+    let currentTab = 'deposits';
+    $("#tabDeposit").addEventListener('click', ()=>{ 
+      currentTab = 'deposits'; 
+      $("#tabDeposit").classList.add('active');
+      $("#tabWithdraw").classList.remove('active');
+      fetchAndRender(false);
+    });
+    $("#tabWithdraw").addEventListener('click', ()=>{ 
+      currentTab = 'withdrawals'; 
+      $("#tabWithdraw").classList.add('active');
+      $("#tabDeposit").classList.remove('active');
+      fetchAndRender(false);
+    });
 
     function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200); }
     function setLive(ok){
@@ -131,7 +153,6 @@
       live.lastChild.textContent = ok ? 'متصل' : 'غير متصل';
     }
 
-    /* ===== جلب أسماء المستخدمين (كاش بسيط) ===== */
     const userCache = new Map();
     async function getUserName(uid){
       if(userCache.has(uid)) return userCache.get(uid);
@@ -143,15 +164,40 @@
       }catch(_){ return '—'; }
     }
 
-    /* ===== قراءة السحوبات لحظيًا ===== */
-    const listRef = db.ref('withdrawals'); // بنية: withdrawals/{uid}/{withdrawId}
-    let lastRows = []; // للـ refresh اليدوي
+    async function getUserBalance(uid){
+      try{
+        const snap = await db.ref('users/'+uid+'/balance').get();
+        return snap.exists() ? parseFloat(snap.val() || 0) : 0;
+      }catch(_){ return 0; }
+    }
 
-    function adapt(uid, id, v){
-      const ts = v.createdAt || v.timestamp || null;
+    let lastDepositRows = [];
+    let lastWithdrawRows = [];
+
+    function adaptDeposit(uid, id, v){
+      const ts = v.createdAt || v.timestamp || v.clientTime || null;
       return {
         id,
         uid,
+        type: 'deposit',
+        name: v.name || v.userName || userCache.get(uid) || '—',
+        accountId: v.accountId || '—',
+        network: v.network || v.net || '—',
+        chain: v.chain || '—',
+        address: v.address || v.addr || '—',
+        memo: v.memo || '',
+        status: v.status || 'pending',
+        tsISO: ts ? new Date(ts).toISOString() : '',
+        tsLocal: ts ? new Date(ts).toLocaleString() : '-'
+      };
+    }
+
+    function adaptWithdraw(uid, id, v){
+      const ts = v.createdAt || v.timestamp || v.clientTime || null;
+      return {
+        id,
+        uid,
+        type: 'withdraw',
         name: v.name || v.userName || userCache.get(uid) || '—',
         amount: Number(v.amount || v.amt || 0),
         fee: Number(v.fee ?? 1),
@@ -160,7 +206,7 @@
         address: v.address || v.addr || '—',
         status: v.status || 'pending',
         tsISO: ts ? new Date(ts).toISOString() : '',
-        tsLocal: ts ? new Date(ts).toLocaleString() : ''
+        tsLocal: ts ? new Date(ts).toLocaleString() : '-'
       };
     }
 
@@ -169,105 +215,206 @@
       return a.length > 16 ? (a.slice(0,7)+'…'+a.slice(-6)) : a;
     }
 
+    function shortAccountId(a){
+      a = String(a||'');
+      return a.length > 12 ? (a.slice(0,8)+'…'+a.slice(-4)) : a;
+    }
+
     function fmt(n){ return Number(n||0).toFixed(2); }
 
     function rowEl(x){
       const d = document.createElement('div');
-      d.className = 'row';
+      d.className = 'row ' + (x.type === 'deposit' ? 'row-deposit' : 'row-withdraw');
+
+      const typeBadge = x.type === 'deposit' 
+        ? `<span class="type-badge type-deposit">إيداع</span>`
+        : `<span class="type-badge type-withdraw">سحب</span>`;
 
       const statusBadge =
         x.status==='approved' ? `<span class="badge bd-ok">معتمد</span>` :
-        x.status==='rejected' ? `<span class="badge bd-no">مرفوض</span>` : '';
+        x.status==='rejected' ? `<span class="badge bd-no">مرفوض</span>` :
+        `<span class="badge bd-pending">قيد الانتظار</span>`;
 
-      d.innerHTML = `
-        <div class="main">
-          <span class="name" title="${x.name}">${x.name}</span>
-          <span class="sep">·</span>
-          <span class="id" title="${x.uid}">${x.uid}</span>
-          <span class="sep">·</span>
-          <span class="net">${x.network}</span>
-          <span class="sep">·</span>
-          <span class="amt" title="صافي بعد الرسوم">${fmt(x.amount)} → ${fmt(x.net)}</span>
-          <span class="sep">·</span>
-          <span class="time">${x.tsLocal || '-'}</span>
-          ${statusBadge ? `<span class="sep">·</span>${statusBadge}` : ''}
-        </div>
+      let innerHTML = '';
+      
+      if(x.type === 'deposit'){
+        innerHTML = `
+          <div class="main">
+            ${typeBadge}
+            <span class="name" title="${x.name}">${x.name}</span>
+            <span class="sep">·</span>
+            <span class="id" title="${x.uid}">${x.uid}</span>
+            <span class="sep">·</span>
+            ${x.accountId && x.accountId !== '—' ? `
+              <span class="account-id" title="رقم الحساب: ${x.accountId}">${shortAccountId(x.accountId)}</span>
+              <span class="sep">·</span>
+            ` : ''}
+            <span class="net">${x.network} ${x.chain}</span>
+            <span class="sep">·</span>
+            <span class="time">${x.tsLocal || '-'}</span>
+            <span class="sep">·</span>
+            ${statusBadge}
+          </div>
 
-        <div class="main" style="gap:6px;flex:1 1 420px">
-          <span class="ms" aria-hidden="true">link</span>
-          <span class="addr" title="${x.address}">${shortAddr(x.address)}</span>
-          <button class="chip" data-copy="${x.address}"><span class="ms">content_copy</span> نسخ العنوان</button>
-        </div>
+          <div class="main" style="gap:6px;flex:1 1 420px">
+            <span class="ms" aria-hidden="true">link</span>
+            <span class="addr" title="${x.address}">${shortAddr(x.address)}</span>
+            <button class="chip" data-copy="${x.address}"><span class="ms">content_copy</span> نسخ العنوان</button>
+            ${x.memo ? `<button class="chip" data-copy-memo="${x.memo}"><span class="ms">content_copy</span> نسخ الميمو</button>` : ''}
+            ${x.accountId && x.accountId !== '—' ? `<button class="chip" data-copy-account="${x.accountId}"><span class="ms">badge</span> نسخ رقم الحساب</button>` : ''}
+          </div>
 
-        <div class="actions">
-          <button class="chip ok" data-act="approve">اعتماد</button>
-          <button class="chip no" data-act="reject">إلغاء</button>
-        </div>
-      `;
+          <div class="actions">
+            <button class="chip ok" data-act="approve">تأكيد الإيداع</button>
+            <button class="chip no" data-act="reject">رفض</button>
+          </div>
+        `;
+      } else {
+        innerHTML = `
+          <div class="main">
+            ${typeBadge}
+            <span class="name" title="${x.name}">${x.name}</span>
+            <span class="sep">·</span>
+            <span class="id" title="${x.uid}">${x.uid}</span>
+            <span class="sep">·</span>
+            <span class="net">${x.network}</span>
+            <span class="sep">·</span>
+            <span class="amt" title="المبلغ">${fmt(x.amount)} USDT</span>
+            <span class="sep">·</span>
+            <span class="time">${x.tsLocal || '-'}</span>
+            <span class="sep">·</span>
+            ${statusBadge}
+          </div>
 
-      // تعطيل الأزرار لو ليست pending
+          <div class="main" style="gap:6px;flex:1 1 420px">
+            <span class="ms" aria-hidden="true">link</span>
+            <span class="addr" title="${x.address}">${shortAddr(x.address)}</span>
+            <button class="chip" data-copy="${x.address}"><span class="ms">content_copy</span> نسخ العنوان</button>
+          </div>
+
+          <div class="actions">
+            <button class="chip ok" data-act="approve">اعتماد السحب</button>
+            <button class="chip no" data-act="reject">إلغاء السحب</button>
+          </div>
+        `;
+      }
+
+      d.innerHTML = innerHTML;
+
       if(x.status !== 'pending'){
         d.querySelectorAll('.chip.ok, .chip.no').forEach(b=> b.setAttribute('disabled','true'));
       }
 
-      // نسخ العنوان
       d.querySelector('[data-copy]')?.addEventListener('click', async ()=>{
         const val = String(d.querySelector('[data-copy]').dataset.copy || '');
         try{ await navigator.clipboard.writeText(val); toast('تم نسخ العنوان'); }catch(_){ toast('تعذّر النسخ'); }
       });
 
-      // اعتماد
-      d.querySelector('[data-act="approve"]')?.addEventListener('click', async ()=>{
-        if(!confirm(`اعتماد طلب ${x.id} للمستخدم ${x.name}؟`)) return;
-        d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
-        try{
-          const wRef    = db.ref(`withdrawals/${x.uid}/${x.id}`);
-          const currRef = db.ref(`withdrawals/${x.uid}/current`);
-          // تحدیث أثر قبل الحذف (اختياري)
-          await wRef.update({ status:'approved', approvedAt: Date.now() });
-          // إزالة مؤشر الطلب الحالي إن وُجد
-          const curr = (await currRef.get()).val();
-          if(curr === x.id) await currRef.set(null);
-          // ✅ حذف السجل نهائيًا
-          await wRef.remove();
-          toast('تم الاعتماد والحذف من القاعدة');
-        }catch(e){
-          console.error(e); toast('تعذّر الاعتماد'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
-        }
+      d.querySelector('[data-copy-account]')?.addEventListener('click', async ()=>{
+        const val = String(d.querySelector('[data-copy-account]').dataset.copyAccount || '');
+        try{ await navigator.clipboard.writeText(val); toast('تم نسخ رقم الحساب'); }catch(_){ toast('تعذّر النسخ'); }
       });
 
-      // رفض + إرجاع المبلغ ثم الحذف
-      d.querySelector('[data-act="reject"]')?.addEventListener('click', async ()=>{
-        if(!confirm(`رفض طلب ${x.id} وإرجاع ${fmt(x.amount)} USDT إلى ${x.name}؟`)) return;
-        d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
-        try{
-          const userRef = db.ref(`users/${x.uid}`);
-          const wRef    = db.ref(`withdrawals/${x.uid}/${x.id}`);
-          const currRef = db.ref(`withdrawals/${x.uid}/current`);
+      if(x.type === 'deposit'){
+        d.querySelector('[data-copy-memo]')?.addEventListener('click', async ()=>{
+          const val = String(d.querySelector('[data-copy-memo]').dataset.copyMemo || '');
+          try{ await navigator.clipboard.writeText(val); toast('تم نسخ الميمو'); }catch(_){ toast('تعذّر النسخ'); }
+        });
 
-          // إرجاع المبلغ
-          await userRef.transaction(cur=>{
-            if(!cur) return cur;
-            const bal = Number(cur.balance||0);
-            const nb  = +(bal + Number(x.amount||0)).toFixed(2);
-            return { ...cur, balance: nb };
-          });
+        d.querySelector('[data-act="approve"]')?.addEventListener('click', async ()=>{
+          if(!confirm(`تأكيد إيداع ${x.id} للمستخدم ${x.name}؟`)) return;
+          d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
+          try{
+            const dRef = db.ref(`deposits/${x.uid}/${x.id}`);
+            await dRef.update({ 
+              status: 'approved', 
+              approvedAt: Date.now(),
+              approvedBy: 'admin'
+            });
+            
+            const amountToAdd = parseFloat(prompt(`أدخل المبلغ الذي تريد إضافته لرصيد ${x.name}:`, "0"));
+            
+            if(!isNaN(amountToAdd) && amountToAdd > 0){
+              const userRef = db.ref(`users/${x.uid}`);
+              const userSnap = await userRef.get();
+              if(userSnap.exists()){
+                const userData = userSnap.val();
+                const currentBalance = parseFloat(userData.balance || 0);
+                const newBalance = currentBalance + amountToAdd;
+                await userRef.update({ balance: newBalance.toFixed(2) });
+                toast(`تم تأكيد الإيداع وإضافة ${amountToAdd} إلى رصيد المستخدم`);
+              }
+            }else{
+              toast('تم تأكيد الإيداع بدون إضافة رصيد');
+            }
+          }catch(e){
+            console.error(e); toast('تعذّر التأكيد'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
+          }
+        });
 
-          // أثر قبل الحذف (اختياري)
-          await wRef.update({ status:'rejected', rejectedAt: Date.now() });
+        d.querySelector('[data-act="reject"]')?.addEventListener('click', async ()=>{
+          if(!confirm(`رفض إيداع ${x.id} للمستخدم ${x.name}؟`)) return;
+          d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
+          try{
+            const dRef = db.ref(`deposits/${x.uid}/${x.id}`);
+            await dRef.update({ 
+              status: 'rejected', 
+              rejectedAt: Date.now(),
+              reason: 'رفض بواسطة الأدمن'
+            });
+            toast('تم رفض الإيداع');
+          }catch(e){
+            console.error(e); toast('تعذّر الرفض'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
+          }
+        });
+      } else {
+        d.querySelector('[data-act="approve"]')?.addEventListener('click', async ()=>{
+          if(!confirm(`اعتماد سحب ${fmt(x.amount)} USDT للمستخدم ${x.name}؟\n\nسيتم خصم المبلغ من رصيده.`)) return;
+          d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
+          try{
+            const wRef = db.ref(`withdrawals/${x.uid}/${x.id}`);
+            const currRef = db.ref(`withdrawals/${x.uid}/current`);
+            
+            await wRef.update({ status:'approved', approvedAt: Date.now() });
+            
+            const curr = (await currRef.get()).val();
+            if(curr === x.id) await currRef.set(null);
+            
+            await wRef.remove();
+            toast('تم اعتماد السحب وحذفه من القائمة');
+          }catch(e){
+            console.error(e); toast('تعذّر الاعتماد'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
+          }
+        });
 
-          // إزالة مؤشر الطلب الحالي إن وُجد
-          const curr = (await currRef.get()).val();
-          if(curr === x.id) await currRef.set(null);
+        d.querySelector('[data-act="reject"]')?.addEventListener('click', async ()=>{
+          if(!confirm(`إلغاء سحب ${fmt(x.amount)} USDT وإرجاع المبلغ إلى ${x.name}؟`)) return;
+          d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
+          try{
+            const userRef = db.ref(`users/${x.uid}`);
+            const wRef = db.ref(`withdrawals/${x.uid}/${x.id}`);
+            const currRef = db.ref(`withdrawals/${x.uid}/current`);
 
-          // ✅ حذف السجل نهائيًا
-          await wRef.remove();
+            await userRef.transaction(cur=>{
+              if(!cur) return cur;
+              const bal = Number(cur.balance||0);
+              const nb = +(bal + Number(x.amount||0)).toFixed(2);
+              return { ...cur, balance: nb };
+            });
 
-          toast('تم الرفض ورجوع المبلغ والحذف من القاعدة');
-        }catch(e){
-          console.error(e); toast('تعذّر الرفض'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
-        }
-      });
+            await wRef.update({ status:'rejected', rejectedAt: Date.now() });
+
+            const curr = (await currRef.get()).val();
+            if(curr === x.id) await currRef.set(null);
+
+            await wRef.remove();
+
+            toast('تم إلغاء السحب ورجوع المبلغ إلى حساب المستخدم');
+          }catch(e){
+            console.error(e); toast('تعذّر الإلغاء'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
+          }
+        });
+      }
 
       return d;
     }
@@ -276,45 +423,76 @@
       const cont = $("#list"), empty=$("#empty");
       cont.innerHTML = '';
       rows.sort((a,b)=> (b.tsISO||'').localeCompare(a.tsISO||''));
-      if(!rows.length){ empty.style.display='block'; return; }
+      if(!rows.length){ 
+        empty.textContent = currentTab === 'deposits' ? 'لا توجد إيداعات.' : 'لا توجد سحوبات.';
+        empty.style.display='block'; 
+        return; 
+      }
       empty.style.display='none';
       rows.forEach(x=> cont.appendChild(rowEl(x)));
     }
 
     async function fetchAndRender(showToast){
-      // نُعيد البناء من snapshot الحالي (مخزّن في lastRows)
-      render(lastRows);
+      if(currentTab === 'deposits'){
+        render(lastDepositRows);
+      } else {
+        render(lastWithdrawRows);
+      }
       if(showToast) toast('تم التحديث');
     }
 
-    // مستمع لحظي
-    setLive(true);
-    listRef.on('value', async (snap)=>{
-      try{
-        const rows=[];
-        const promises=[];
-        snap.forEach(userNode=>{
-          const uid = userNode.key;
-          // حضّر الاسم (كاش)
-          promises.push(getUserName(uid));
-          userNode.forEach(child=>{
-            const id = child.key;
-            const v  = child.val() || {};
-            rows.push(adapt(uid, id, v));
+    function startListeners(){
+      setLive(true);
+      
+      db.ref('deposits').on('value', async (snap)=>{
+        try{
+          const rows=[];
+          const promises=[];
+          snap.forEach(userNode=>{
+            const uid = userNode.key;
+            promises.push(getUserName(uid));
+            userNode.forEach(child=>{
+              const id = child.key;
+              const v  = child.val() || {};
+              if(uid !== 'deposits_unlinked') {
+                rows.push(adaptDeposit(uid, id, v));
+              }
+            });
           });
-        });
-        await Promise.all(promises);
-        // حدّث الأسماء بعد الكاش
-        lastRows = rows.map(r=> ({...r, name: userCache.get(r.uid) || r.name || '—'}));
-        render(lastRows);
-      }catch(e){
-        console.error(e); setLive(false); toast('تعذّر الاتصال');
-      }
-    }, _=>{ setLive(false); });
+          await Promise.all(promises);
+          lastDepositRows = rows.map(r=> ({...r, name: userCache.get(r.uid) || r.name || '—'}));
+          if(currentTab === 'deposits') render(lastDepositRows);
+        }catch(e){
+          console.error(e); setLive(false); toast('تعذّر الاتصال');
+        }
+      }, _=>{ setLive(false); });
+
+      db.ref('withdrawals').on('value', async (snap)=>{
+        try{
+          const rows=[];
+          const promises=[];
+          snap.forEach(userNode=>{
+            const uid = userNode.key;
+            promises.push(getUserName(uid));
+            userNode.forEach(child=>{
+              const id = child.key;
+              const v  = child.val() || {};
+              rows.push(adaptWithdraw(uid, id, v));
+            });
+          });
+          await Promise.all(promises);
+          lastWithdrawRows = rows.map(r=> ({...r, name: userCache.get(r.uid) || r.name || '—'}));
+          if(currentTab === 'withdrawals') render(lastWithdrawRows);
+        }catch(e){
+          console.error(e); setLive(false); toast('تعذّر الاتصال');
+        }
+      }, _=>{ setLive(false); });
+    }
+
+    startListeners();
 
   })();
   </script>
-  
   
   <script>
   if ("serviceWorker" in navigator) {
@@ -322,150 +500,125 @@
       .then(reg => console.log("✔ Service Worker registered"))
       .catch(err => console.error("❌ Service Worker failed:", err));
   }
-</script>
-  
+  </script>
   
   <script>
-/* ===== إشعارات سطح المكتب + فحص رسائل كل 5 ثواني ===== */
-(function () {
-  // لازم Firebase compat يكون مفعّل فوق (أنت بالفعل محمّله في الصفحة)
-  if (!window.firebase || !firebase.database) return;
+  (function () {
+    if (!window.firebase || !firebase.database) return;
 
-  // طلب صلاحية الإشعارات مرة واحدة
-  async function ensureNotifyPermission() {
-    try {
-      if (!('Notification' in window)) return false;
-      if (Notification.permission === 'granted') return true;
-      if (Notification.permission === 'denied') return false;
-      const perm = await Notification.requestPermission();
-      return perm === 'granted';
-    } catch (_) { return false; }
-  }
+    async function ensureNotifyPermission() {
+      try {
+        if (!('Notification' in window)) return false;
+        if (Notification.permission === 'granted') return true;
+        if (Notification.permission === 'denied') return false;
+        const perm = await Notification.requestPermission();
+        return perm === 'granted';
+      } catch (_) { return false; }
+    }
 
-  // إظهار إشعار سطح مكتب
-  function showDesktop(title, body, data) {
+    function showDesktop(title, body, data) {
+      try {
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+        const n = new Notification(title || 'إشعار', {
+          body: body || '',
+          icon: '/icon-192.png',
+          badge: '/icon-72.png',
+          tag: (data && data.tag) || 'dynex-msg',
+          renotify: false
+        });
+        n.onclick = (e) => {
+          e.preventDefault();
+          window.focus();
+          n.close();
+        };
+        setTimeout(()=>n.close(), 8000);
+      } catch(_) {}
+    }
+
+    let snd = document.getElementById('msgSnd');
+    if (!snd) {
+      snd = document.createElement('audio');
+      snd.id = 'msgSnd';
+      snd.preload = 'auto';
+      snd.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAA';
+      document.body.appendChild(snd);
+    }
+
+    let UID = null;
     try {
-      if (!('Notification' in window)) return;
-      if (Notification.permission !== 'granted') return;
-      const n = new Notification(title || 'إشعار', {
-        body: body || '',
-        icon: '/icon-192.png',    // لو عندك أيقونة ضع مسارها هنا
-        badge: '/icon-72.png',    // شارة صغيرة اختيارية
-        tag: (data && data.tag) || 'dynex-msg', // لمنع تكرار نفس الإشعار
-        renotify: false
-      });
-      n.onclick = (e) => {
-        e.preventDefault();
-        window.focus();
-        // تقدر تفتح الشيت/صفحة الرسائل هنا لو ودك:
-        // document.getElementById('messagesBtn')?.click();
-        n.close();
-      };
-      setTimeout(()=>n.close(), 8000); // يغلق بعد 8 ثواني (اختياري)
+      const s = JSON.parse(localStorage.getItem('dynex_session') || 'null');
+      UID = s && s.uid;
     } catch(_) {}
-  }
 
-  // صوت خفيف (اختياري)
-  let snd = document.getElementById('msgSnd');
-  if (!snd) {
-    snd = document.createElement('audio');
-    snd.id = 'msgSnd';
-    snd.preload = 'auto';
-    snd.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAA'; // بدّلها لو عندك ملف
-    document.body.appendChild(snd);
-  }
+    const db = firebase.database();
+    const refPublic  = db.ref('company/messages');
+    const refPrivate = UID ? db.ref('user_inbox/' + UID) : null;
 
-  // UID من الجلسة — للإنبوكس الخاص (إن وجد)
-  let UID = null;
-  try {
-    const s = JSON.parse(localStorage.getItem('dynex_session') || 'null');
-    UID = s && s.uid;
-  } catch(_) {}
+    const LS_PUB  = 'notif_last_company';
+    const LS_PRIV = 'notif_last_inbox';
+    const getSeen = (k)=> localStorage.getItem(k) || '';
+    const setSeen = (k,v)=> localStorage.setItem(k, v || '');
 
-  const db = firebase.database();
-  const refPublic  = db.ref('company/messages');
-  const refPrivate = UID ? db.ref('user_inbox/' + UID) : null;
+    const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+    function pushIdToTime(id){
+      if(!id) return 0;
+      let ts=0;
+      for(let i=0;i<8;i++){ ts = ts*64 + PUSH_CHARS.indexOf(id.charAt(i)); }
+      return ts;
+    }
 
-  // نخزن آخر مفتاح شُوهد — عشان ما نكرر
-  const LS_PUB  = 'notif_last_company';
-  const LS_PRIV = 'notif_last_inbox';
-  const getSeen = (k)=> localStorage.getItem(k) || '';
-  const setSeen = (k,v)=> localStorage.setItem(k, v || '');
+    function makeNotifPayload(lastObj){
+      const title = (lastObj.title || 'رسالة جديدة').trim();
+      const body  = String(lastObj.body || lastObj.text || '').trim();
+      return { title, body };
+    }
 
-  // تحويل push key لأقرب وقت (للترتيب/العرض الاحتياط)
-  const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
-  function pushIdToTime(id){
-    if(!id) return 0;
-    let ts=0;
-    for(let i=0;i<8;i++){ ts = ts*64 + PUSH_CHARS.indexOf(id.charAt(i)); }
-    return ts;
-  }
+    async function checkLatestOnce(ref, storeKey, tag) {
+      try {
+        const snap = await ref.limitToLast(1).get();
+        if (!snap.exists()) return false;
+        let lastKey = '', lastObj = null;
+        snap.forEach(ch => { lastKey = ch.key; lastObj = ch.val() || {}; });
 
-  // صياغة عنوان/نص للإشعار من آخر رسالة
-  function makeNotifPayload(lastObj){
-    const title = (lastObj.title || 'رسالة جديدة').trim();
-    const body  = String(lastObj.body || lastObj.text || '').trim();
-    return { title, body };
-  }
+        const seen = getSeen(storeKey);
+        const hasNew = lastKey && lastKey !== seen;
 
-  // فحص مرجع (عام/خاص): يقرأ آخر عنصر، يقارن، ويشغّل إشعار إذا الصفحة بالخلفية
-  async function checkLatestOnce(ref, storeKey, tag) {
-    try {
-      const snap = await ref.limitToLast(1).get();
-      if (!snap.exists()) return false;
-      let lastKey = '', lastObj = null;
-      snap.forEach(ch => { lastKey = ch.key; lastObj = ch.val() || {}; });
+        if (hasNew) setSeen(storeKey, lastKey);
 
-      // جديد؟
-      const seen = getSeen(storeKey);
-      const hasNew = lastKey && lastKey !== seen;
-
-      // تحديث الـ seen فورًا (عشان ما تتكرر الإشعارات) — تقدر تأخره لين تفتح الشيت
-      // بس هنا نبغى إشعار مرة وحدة فقط.
-      if (hasNew) setSeen(storeKey, lastKey);
-
-      // لو الصفحة بالخلفية + عندنا صلاحية → أعرض إشعار Banner
-      if (hasNew && document.hidden) {
-        const ok = await ensureNotifyPermission();
-        if (ok) {
-          const { title, body } = makeNotifPayload(lastObj);
-          showDesktop(title, body, { tag });
+        if (hasNew && document.hidden) {
+          const ok = await ensureNotifyPermission();
+          if (ok) {
+            const { title, body } = makeNotifPayload(lastObj);
+            showDesktop(title, body, { tag });
+          }
+          try { snd.currentTime = 0; snd.play().catch(()=>{}); } catch(_) {}
         }
-        // صوت بسيط
-        try { snd.currentTime = 0; snd.play().catch(()=>{}); } catch(_) {}
-      }
 
-      return hasNew;
-    } catch(_) { return false; }
-  }
+        return hasNew;
+      } catch(_) { return false; }
+    }
 
-  // فحص دوري كل 5 ثواني
-  async function pollAll() {
-    try {
-      await checkLatestOnce(refPublic, LS_PUB,  'company');
-      if (refPrivate) await checkLatestOnce(refPrivate, LS_PRIV, 'inbox');
-    } catch(_) {}
-  }
+    async function pollAll() {
+      try {
+        await checkLatestOnce(refPublic, LS_PUB,  'company');
+        if (refPrivate) await checkLatestOnce(refPrivate, LS_PRIV, 'inbox');
+      } catch(_) {}
+    }
 
-  // مستمع لحظي (يشتغل حتى لو ما سوّينا poll)
-  refPublic.limitToLast(1).on('value', pollAll);
-  if (refPrivate) refPrivate.limitToLast(1).on('value', pollAll);
+    refPublic.limitToLast(1).on('value', pollAll);
+    if (refPrivate) refPrivate.limitToLast(1).on('value', pollAll);
 
-  // احتياط كل 5 ثواني
-  setInterval(pollAll, 5000);
+    setInterval(pollAll, 5000);
 
-  // اطلب الصلاحية أول ما يحمّل (مرة واحدة فقط)
-  ensureNotifyPermission();
+    ensureNotifyPermission();
 
-  // لو عندك زر رسائل/نقطة… خلّي فتح الشيت يوقف النقطة/الهزّة الخ
-  // (اختياري، يشتغل مع كودك الحالي)
-  document.getElementById('messagesBtn')?.addEventListener('click', ()=>{
-    // لما تفتح الرسائل، اعتبر آخر واحد مقروء
-    refPublic.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PUB, ch.key)));
-    if (refPrivate) refPrivate.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PRIV, ch.key)));
-  });
-})();
-</script>
+    document.getElementById('messagesBtn')?.addEventListener('click', ()=>{
+      refPublic.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PUB, ch.key)));
+      if (refPrivate) refPrivate.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PRIV, ch.key)));
+    });
+  })();
+  </script>
   
 </body>
 </html>
