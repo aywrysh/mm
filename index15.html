@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>توقيف الحسابات | نظام الشركة</title>
+
+  <!-- خط وأيقونة -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@24,600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+      --card:#fff; --bg:#f6f7f9; --radius:14px; --top:60px;
+      --danger:#ef4444; --warn:#f59e0b; --ok:#22c55e;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
+
+    /* شريط علوي */
+    .topbar{
+      position:fixed; inset-inline:0; top:0; height:var(--top); background:var(--card);
+      border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:10;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .brand .dot{width:14px;height:14px;border-radius:50%;background:var(--accent)}
+    .top-actions{display:flex; gap:8px; align-items:center}
+    .btn{
+      display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);
+      border-radius:10px;background:#fff;cursor:pointer
+    }
+    .ms{font-family:'Material Symbols Rounded'}
+
+    /* الحاوية */
+    .wrap{min-height:100dvh; padding:calc(var(--top) + 16px) 16px 24px; max-width:1200px; margin:0 auto}
+    .row2{display:flex; gap:12px; flex-wrap:wrap; align-items:stretch}
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      box-shadow:0 10px 24px rgba(0,0,0,.06); padding:16px;
+    }
+    .card.head{flex:1; min-width:280px}
+    .card.side{width:min(380px,100%);}
+
+    h1{margin:0 0 6px; font-size:22px}
+    .sub{margin:0; color:var(--muted); font-size:14px}
+
+    .tools{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+    .input{
+      padding:12px; border:1px solid var(--line); border-radius:12px; background:#fafafa; font-weight:800; width:100%;
+    }
+    .input:focus{outline:none; border-color:#cdd5e0; background:#fff}
+    .input[dir="ltr"]{direction:ltr}
+    .mini{width:180px}
+    .btn-solid{
+      padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+      background:#fff; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn-solid.primary{background:var(--accent); border-color:var(--accent); color:#111}
+    .btn-solid.danger{background:#fff1f1; border-color:#fecaca; color:#7f1d1d}
+    .btn-solid.warn{background:#fff7ed; border-color:#fed7aa; color:#7c2d12}
+    .btn-solid:disabled{opacity:.55; cursor:not-allowed}
+
+    .stats{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:12px
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px; border:1px solid var(--line);
+      background:#fff; font-weight:900; font-size:12px; color:#111;
+    }
+    .pill .k{color:var(--muted); font-weight:900}
+    .pill .v{font-weight:900}
+    .pill.ok{border-color:#bbf7d0; background:#f0fdf4}
+    .pill.warn{border-color:#fde68a; background:#fffbeb}
+    .pill.danger{border-color:#fecaca; background:#fff1f1}
+
+    /* قائمة الحسابات */
+    .list{margin-top:14px; display:grid; gap:10px}
+    .item{
+      display:flex; gap:12px; align-items:center; padding:12px;
+      border:1px solid var(--line); border-radius:14px; background:#fff;
+    }
+    .avatar{
+      width:44px;height:44px;border-radius:14px; display:grid; place-items:center;
+      background:#f3f4f6; border:1px solid var(--line); color:#111;
+      font-weight:900;
+    }
+    .meta{flex:1; min-width:220px}
+    .name{font-weight:900}
+    .muted{color:var(--muted); font-weight:800; font-size:13px}
+    .kv{display:flex; gap:10px; flex-wrap:wrap; margin-top:4px}
+    .tag{
+      font-size:12px; font-weight:900; color:#111;
+      border:1px solid var(--line); background:#fafafa;
+      padding:4px 8px; border-radius:999px;
+    }
+    .tag strong{font-weight:900}
+    .tag.ok{border-color:#bbf7d0;background:#f0fdf4}
+    .tag.danger{border-color:#fecaca;background:#fff1f1;color:#7f1d1d}
+    .actions{display:flex; gap:8px; flex-wrap:wrap}
+    .icon-btn{
+      width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+      background:#fff; cursor:pointer; display:grid; place-items:center;
+    }
+    .icon-btn.block{border-color:#fecaca; background:#fff1f1; color:#7f1d1d}
+    .icon-btn.unblock{border-color:#bbf7d0; background:#f0fdf4; color:#14532d}
+    .icon-btn.edit{border-color:#dbeafe; background:#eff6ff}
+    .icon-btn .ms{font-size:20px}
+
+    .empty{
+      text-align:center; color:var(--muted); font-weight:900;
+      padding:16px; border:1px dashed rgba(15,23,42,.18);
+      border-radius:14px; background:#fff;
+      display:none;
+    }
+
+    /* مودال التوقيف */
+    .modal{
+      position:fixed; inset:0; background:rgba(2,6,23,.45);
+      display:none; align-items:center; justify-content:center; padding:18px; z-index:50;
+    }
+    .modal.show{display:flex}
+    .panel{
+      width:min(720px, 96vw);
+      background:#fff; border:1px solid var(--line); border-radius:16px;
+      box-shadow:0 18px 48px rgba(0,0,0,.18);
+      overflow:hidden;
+    }
+    .panel-h{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; border-bottom:1px solid var(--line); background:#fff;
+    }
+    .panel-h .t{font-weight:900}
+    .panel-b{padding:14px}
+    .grid{
+      display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0,1fr));
+    }
+    @media (max-width:700px){ .grid{grid-template-columns:1fr} }
+    .field{display:grid; gap:8px}
+    .label{font-weight:900; font-size:13px}
+    .hint{font-size:12px; color:var(--muted); font-weight:800}
+    .textarea{
+      min-height:88px; resize:vertical;
+    }
+
+    .panel-f{
+      display:flex; gap:10px; flex-wrap:wrap;
+      padding:12px 14px; border-top:1px solid var(--line); background:#fafafa;
+    }
+    .panel-f .left{margin-inline-start:auto; display:flex; gap:10px; flex-wrap:wrap}
+
+    /* توست */
+    .toast{
+      position:fixed; bottom:22px; left:50%; transform:translateX(-50%) scale(.96);
+      background:rgba(17,17,17,.92); color:#fff; padding:8px 12px; border-radius:10px;
+      font-weight:900; font-size:12px; opacity:0; pointer-events:none;
+      transition:opacity .25s, transform .25s; z-index:80;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
+  </style>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
+</head>
+
+<body>
+
+  <!-- الشريط العلوي -->
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span><span>توقيف الحسابات</span></div>
+    <div class="top-actions">
+      <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
+      <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="row2">
+      <section class="card head">
+        <h1>لوحة توقيف الحسابات</h1>
+        <p class="sub">وقّف/فك التوقيف مع سبب — ويحفظ مباشرة في users/ حتى يلتقطه الكود الرئيسي.</p>
+
+        <div class="tools">
+          <input id="q" class="input" type="text" placeholder="ابحث: الاسم / اليوزر / الهاتف / رقم الحساب / UID" />
+          <select id="sort" class="input mini" title="ترتيب">
+            <option value="new">الأحدث</option>
+            <option value="old">الأقدم</option>
+            <option value="name">الاسم</option>
+            <option value="username">اسم المستخدم</option>
+            <option value="accountId">رقم الحساب</option>
+            <option value="status">الحالة</option>
+          </select>
+          <button class="btn-solid primary" id="exportBtn" title="نسخ النتائج">
+            <span class="ms">content_copy</span>
+            نسخ النتائج
+          </button>
+        </div>
+
+        <div class="stats">
+          <span class="pill ok"><span class="ms">groups</span><span class="k">الإجمالي:</span> <span class="v" id="total">0</span></span>
+          <span class="pill warn"><span class="ms">filter_alt</span><span class="k">المعروض:</span> <span class="v" id="shown">0</span></span>
+          <span class="pill danger"><span class="ms">block</span><span class="k">الموقّفين:</span> <span class="v" id="suspCount">0</span></span>
+        </div>
+
+        <div id="list" class="list"></div>
+        <div id="empty" class="empty">لا توجد حسابات مطابقة لبحثك.</div>
+      </section>
+
+      <aside class="card side">
+        <h1 style="font-size:18px;margin:0 0 6px">كيف يشتغل مع الكود الرئيسي؟</h1>
+        <p class="sub" style="margin-bottom:12px">
+          عند التوقيف يتم حفظ:<br>
+          <code>suspended:true</code> و <code>status:"suspended"</code> و <code>suspendReason</code><br>
+          والكود الرئيسي عندك يتعرّف تلقائيًا.
+        </p>
+
+        <button class="btn-solid" id="scrollTopBtn">
+          <span class="ms">arrow_upward</span>
+          أعلى الصفحة
+        </button>
+        <button class="btn-solid warn" id="quickHelpBtn" style="margin-top:10px">
+          <span class="ms">help</span>
+          ملاحظة مهمة
+        </button>
+      </aside>
+    </div>
+  </main>
+
+  <!-- مودال التوقيف -->
+  <div class="modal" id="modal">
+    <div class="panel" role="dialog" aria-modal="true">
+      <div class="panel-h">
+        <div class="t" id="mTitle">توقيف/فك توقيف</div>
+        <button class="btn" id="closeModal" title="إغلاق"><span class="ms">close</span></button>
+      </div>
+
+      <div class="panel-b">
+        <div class="grid">
+          <div class="field">
+            <label class="label">UID</label>
+            <input id="m_uid" class="input" type="text" readonly dir="ltr">
+            <div class="hint">مفتاح السجل داخل users/</div>
+          </div>
+
+          <div class="field">
+            <label class="label">رقم الحساب</label>
+            <input id="m_accountId" class="input" type="text" readonly dir="ltr">
+            <div class="hint">للعرض فقط</div>
+          </div>
+
+          <div class="field">
+            <label class="label">الاسم</label>
+            <input id="m_name" class="input" type="text" readonly>
+          </div>
+
+          <div class="field">
+            <label class="label">اسم المستخدم</label>
+            <input id="m_username" class="input" type="text" readonly dir="ltr">
+          </div>
+
+          <div class="field">
+            <label class="label">حالة الحساب</label>
+            <input id="m_status" class="input" type="text" readonly dir="ltr">
+            <div class="hint">active / suspended</div>
+          </div>
+
+          <div class="field">
+            <label class="label">موقّف؟</label>
+            <input id="m_suspended" class="input" type="text" readonly dir="ltr">
+            <div class="hint">true / false</div>
+          </div>
+
+          <div class="field" style="grid-column:1/-1">
+            <label class="label">سبب التوقيف</label>
+            <textarea id="m_reason" class="input textarea" placeholder="اكتب سبب التوقيف..."></textarea>
+            <div class="hint">سيظهر للمستخدم في واجهته إذا حبيت تعرضه.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-f">
+        <button class="btn-solid" id="copyUserBtn">
+          <span class="ms">content_copy</span>
+          نسخ بيانات التوقيف
+        </button>
+
+        <div class="left">
+          <button class="btn-solid danger" id="suspendBtn">
+            <span class="ms">block</span>
+            توقيف الحساب
+          </button>
+          <button class="btn-solid primary" id="unsuspendBtn">
+            <span class="ms">check_circle</span>
+            فك التوقيف
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module">
+    /* ============ Firebase إعداد ============ */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+      authDomain: "dynex-f4486.firebaseapp.com",
+      databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+      projectId: "dynex-f4486",
+      storageBucket: "dynex-f4486.firebasestorage.app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    /* ============ أدوات واجهة ============ */
+    const $ = s => document.querySelector(s);
+    const toastEl = $("#toast");
+    function toast(msg){
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      setTimeout(()=>toastEl.classList.remove("show"), 1600);
+    }
+    function esc(s){
+      return String(s ?? "").replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+    function norm(s){ return String(s??"").trim().toLowerCase(); }
+
+    const DASHBOARD = "index.html"; // عدّل لو عندك صفحة ثانية
+    $("#backBtn").addEventListener("click", ()=>{
+      if(history.length > 1) history.back();
+      else window.location.replace(DASHBOARD);
+    });
+    $("#refreshBtn").addEventListener("click", ()=> loadUsers(true));
+    $("#scrollTopBtn").addEventListener("click", ()=> window.scrollTo({top:0, behavior:"smooth"}));
+    $("#quickHelpBtn").addEventListener("click", ()=>{
+      alert("التوقيف هنا يكتب داخل users/{uid}: suspended/status/suspendReason. الكود الرئيسي عندك يقرأها ويمنع الدخول تلقائيًا.");
+    });
+
+    /* ============ بيانات الحسابات ============ */
+    let USERS = [];
+    let FILTERED = [];
+    let CURRENT = null;
+
+    function pickCreatedAt(u){
+      const v = u?.createdAt ?? u?.created_ts ?? u?.createdAtMs ?? u?.time ?? 0;
+      if(typeof v === "number") return v;
+      return 0;
+    }
+
+    function avatarLetters(name, username){
+      const n = String(name||"").trim();
+      if(n){
+        const parts = n.split(/\s+/).filter(Boolean);
+        const a = parts[0]?.[0] ?? "U";
+        const b = parts[1]?.[0] ?? "";
+        return (a + b).toUpperCase();
+      }
+      const u = String(username||"").trim();
+      return (u.slice(0,2) || "U").toUpperCase();
+    }
+
+    function isSusp(u){
+      return (u.suspended === true) || (String(u.status||"").toLowerCase()==="suspended") || (u.blocked===true);
+    }
+
+    function render(){
+      $("#total").textContent = USERS.length.toLocaleString("ar-EG");
+      $("#shown").textContent = FILTERED.length.toLocaleString("ar-EG");
+      const suspCount = USERS.filter(isSusp).length;
+      $("#suspCount").textContent = suspCount.toLocaleString("ar-EG");
+
+      const list = $("#list");
+      const empty = $("#empty");
+      list.innerHTML = "";
+
+      if(!FILTERED.length){
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+
+      FILTERED.forEach(u=>{
+        const name = u.name ?? u.fullName ?? u.displayName ?? "—";
+        const username = u.username ?? "—";
+        const phone = u.phone ?? "—";
+        const accountId = u.accountId ?? u.accountID ?? u.accId ?? "—";
+        const suspended = isSusp(u);
+
+        const card = document.createElement("div");
+        card.className = "item";
+        card.innerHTML = `
+          <div class="avatar">${esc(avatarLetters(name, username))}</div>
+          <div class="meta">
+            <div class="name">${esc(name)}</div>
+            <div class="muted" dir="ltr">@${esc(username)} · UID: ${esc(u.uid)}</div>
+            <div class="kv">
+              <span class="tag"><strong>الحساب:</strong> <span dir="ltr">${esc(accountId)}</span></span>
+              <span class="tag"><strong>الهاتف:</strong> <span dir="ltr">${esc(phone)}</span></span>
+              ${suspended ? `<span class="tag danger"><strong>الحالة:</strong> موقّف</span>` : `<span class="tag ok"><strong>الحالة:</strong> نشط</span>`}
+            </div>
+          </div>
+          <div class="actions">
+            <button class="icon-btn edit" title="فتح" data-act="open" data-uid="${esc(u.uid)}"><span class="ms">tune</span></button>
+            ${suspended
+              ? `<button class="icon-btn unblock" title="فك التوقيف" data-act="unsuspend" data-uid="${esc(u.uid)}"><span class="ms">check_circle</span></button>`
+              : `<button class="icon-btn block" title="توقيف" data-act="suspend" data-uid="${esc(u.uid)}"><span class="ms">block</span></button>`
+            }
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function applyFilter(){
+      const q = norm($("#q").value);
+      let arr = USERS.slice();
+
+      if(q){
+        arr = arr.filter(u=>{
+          const name = norm(u.name ?? u.fullName ?? u.displayName ?? "");
+          const username = norm(u.username ?? "");
+          const phone = norm(u.phone ?? "");
+          const accountId = norm(u.accountId ?? u.accountID ?? u.accId ?? "");
+          const uid = norm(u.uid ?? "");
+          const status = norm(u.status ?? "");
+          const reason = norm(u.suspendReason ?? u.reason ?? "");
+          return (name.includes(q) || username.includes(q) || phone.includes(q) || accountId.includes(q) || uid.includes(q) || status.includes(q) || reason.includes(q));
+        });
+      }
+
+      const sort = $("#sort").value;
+      arr.sort((a,b)=>{
+        if(sort === "name") return norm(a.name).localeCompare(norm(b.name), "ar");
+        if(sort === "username") return norm(a.username).localeCompare(norm(b.username));
+        if(sort === "accountId") return String(a.accountId||"").localeCompare(String(b.accountId||""));
+        if(sort === "status") return (isSusp(b)?1:0) - (isSusp(a)?1:0); // الموقّف أول
+        const ta = pickCreatedAt(a), tb = pickCreatedAt(b);
+        if(sort === "old") return (ta||0) - (tb||0);
+        return (tb||0) - (ta||0);
+      });
+
+      FILTERED = arr;
+      render();
+    }
+
+    async function loadUsers(showToast=false){
+      try{
+        const snap = await get(ref(db, "users"));
+        const obj = snap.exists() ? snap.val() : {};
+        USERS = Object.keys(obj).map(uid => {
+          const u = obj[uid] || {};
+          return {
+            uid,
+            username: u.username ?? u.uname ?? "",
+            name: u.name ?? u.fullName ?? u.displayName ?? "",
+            phone: u.phone ?? "",
+            accountId: u.accountId ?? u.accountID ?? u.accId ?? "",
+            status: u.status ?? "",
+            suspended: u.suspended ?? false,
+            blocked: u.blocked ?? false,
+            suspendReason: u.suspendReason ?? u.reason ?? "",
+            createdAt: u.createdAt ?? u.created_ts ?? 0,
+            _raw: u
+          };
+        });
+
+        applyFilter();
+        if(showToast) toast("تم التحديث");
+      }catch(e){
+        console.error(e);
+        toast("تعذّر تحميل الحسابات");
+      }
+    }
+
+    /* ============ مودال ============ */
+    const modal = $("#modal");
+    function openModal(u){
+      CURRENT = u;
+      $("#m_uid").value = u.uid || "";
+      $("#m_accountId").value = u.accountId || "";
+      $("#m_name").value = u.name || "";
+      $("#m_username").value = u.username || "";
+      $("#m_status").value = String(u.status || (isSusp(u) ? "suspended" : "active"));
+      $("#m_suspended").value = String(!!isSusp(u));
+      $("#m_reason").value = String(u.suspendReason || "");
+      $("#mTitle").textContent = "توقيف/فك توقيف";
+      modal.classList.add("show");
+    }
+    function closeModal(){
+      modal.classList.remove("show");
+      CURRENT = null;
+    }
+    $("#closeModal").addEventListener("click", closeModal);
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
+
+    $("#copyUserBtn").addEventListener("click", async ()=>{
+      if(!CURRENT) return;
+      const data = {
+        uid: $("#m_uid").value,
+        accountId: $("#m_accountId").value,
+        username: $("#m_username").value,
+        suspended: $("#m_suspended").value,
+        status: $("#m_status").value,
+        suspendReason: $("#m_reason").value
+      };
+      const text = JSON.stringify(data, null, 2);
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("تم نسخ بيانات التوقيف");
+      }catch{
+        toast("تعذّر النسخ");
+      }
+    });
+
+    async function doSuspend(uid, reason){
+      const patch = {
+        suspended: true,
+        status: "suspended",
+        suspendReason: String(reason||"").trim(),
+        blocked: false
+      };
+      await update(ref(db, "users/" + uid), patch);
+    }
+
+    async function doUnsuspend(uid){
+      const patch = {
+        suspended: false,
+        status: "active",
+        suspendReason: ""
+      };
+      await update(ref(db, "users/" + uid), patch);
+    }
+
+    $("#suspendBtn").addEventListener("click", async ()=>{
+      if(!CURRENT) return;
+      const uid = $("#m_uid").value.trim();
+      const reason = $("#m_reason").value.trim();
+      const ok = confirm("تأكيد توقيف الحساب؟");
+      if(!ok) return;
+
+      const btn = $("#suspendBtn");
+      const prev = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="ms">hourglass_top</span> جارٍ التوقيف...`;
+
+      try{
+        await doSuspend(uid, reason);
+        toast("تم توقيف الحساب");
+        closeModal();
+        await loadUsers(false);
+      }catch(e){
+        console.error(e);
+        toast("تعذّر توقيف الحساب");
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = prev;
+      }
+    });
+
+    $("#unsuspendBtn").addEventListener("click", async ()=>{
+      if(!CURRENT) return;
+      const uid = $("#m_uid").value.trim();
+      const ok = confirm("تأكيد فك التوقيف؟");
+      if(!ok) return;
+
+      const btn = $("#unsuspendBtn");
+      const prev = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="ms">hourglass_top</span> جارٍ فك التوقيف...`;
+
+      try{
+        await doUnsuspend(uid);
+        toast("تم فك التوقيف");
+        closeModal();
+        await loadUsers(false);
+      }catch(e){
+        console.error(e);
+        toast("تعذّر فك التوقيف");
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = prev;
+      }
+    });
+
+    /* ============ أحداث القائمة ============ */
+    $("#list").addEventListener("click", async (e)=>{
+      const b = e.target.closest("[data-act]");
+      if(!b) return;
+      const uid = b.getAttribute("data-uid");
+      const u = USERS.find(x => x.uid === uid);
+      if(!u) return;
+
+      const act = b.getAttribute("data-act");
+      if(act === "open"){
+        openModal(u);
+      }else if(act === "suspend"){
+        openModal(u);
+      }else if(act === "unsuspend"){
+        const ok = confirm("تأكيد فك التوقيف لهذا الحساب؟");
+        if(!ok) return;
+        try{
+          await doUnsuspend(uid);
+          toast("تم فك التوقيف");
+          await loadUsers(false);
+        }catch(_){
+          toast("تعذّر فك التوقيف");
+        }
+      }
+    });
+
+    $("#q").addEventListener("input", applyFilter);
+    $("#sort").addEventListener("change", applyFilter);
+
+    $("#exportBtn").addEventListener("click", async ()=>{
+      const rows = FILTERED.map(u => ({
+        uid: u.uid,
+        accountId: u.accountId || "",
+        username: u.username || "",
+        name: u.name || "",
+        phone: u.phone || "",
+        suspended: isSusp(u),
+        status: u.status || "",
+        suspendReason: u.suspendReason || ""
+      }));
+      const text = JSON.stringify(rows, null, 2);
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("تم نسخ النتائج");
+      }catch{
+        toast("تعذّر النسخ");
+      }
+    });
+
+    loadUsers(false);
+  </script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(reg => console.log("✔ Service Worker registered"))
+        .catch(err => console.error("❌ Service Worker failed:", err));
+    }
+  </script>
+
+</body>
+</html>

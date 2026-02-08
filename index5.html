@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>قيود: من الرصيد → العقد المقفل</title>
+  <title>قيود: من الرصيد → العقد المقفل (نسخة محسنة)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
@@ -11,7 +11,7 @@
   <style>
     :root{
       --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
-      --bg:#f7f8fa; --card:#fff; --top:56px; --radius:14px;
+      --bg:#f7f8fa; --card:#fff; --top:56px; --radius:14px; --edit:#3b82f6; --delete:#ef4444;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
@@ -42,16 +42,65 @@
       display:flex; align-items:center; gap:10px; padding:10px 12px;
       border:1px solid var(--line); border-radius:12px; background:#fff;
       font-weight:700; font-size:14px; flex-wrap:wrap;
+      position:relative;
     }
+    .row.edited{background:#f0f9ff; border-color:#bae6fd;}
+    .row.locked{background:#fef2f2; border-color:#fecaca;}
     .main{display:flex; gap:10px; align-items:center; min-width:260px; flex:1 1 480px; overflow:hidden; white-space:nowrap}
     .name{max-width:18ch; overflow:hidden; text-overflow:ellipsis}
     .sep{opacity:.5}
     .badge{padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;background:#fafafa}
     .arrow{display:inline-flex; align-items:center; gap:4px; color:#334155}
     .amt{font-weight:900}
-    .time{color:var(--muted); font-weight:700}
-    .empty{padding:14px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:10px}
+    .time{color:var(--muted); font-weight:700; font-size:12px}
+    .status-badge{
+      padding:4px 8px; border-radius:999px; font-weight:900; font-size:11px;
+    }
+    .status-active{background:#dcfce7; color:#166534;}
+    .status-edited{background:#dbeafe; color:#1e40af;}
+    .status-locked{background:#fee2e2; color:#991b1b;}
+    
+    /* الأزرار */
+    .actions{display:flex; gap:8px}
+    .chip{padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; font-weight:800; cursor:pointer; font-size:12px}
+    .edit{background:var(--edit); color:#fff; border-color:var(--edit)}
+    .delete{background:var(--delete); color:#fff; border-color:var(--delete)}
+    .chip[disabled]{opacity:.4; cursor:not-allowed; pointer-events:none}
+    
+    /* Modal التعديل */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      opacity:0; visibility:hidden; transition:.25s; z-index:100;
+    }
+    .modal{
+      position:fixed; left:50%; top:50%;
+      transform:translate(-50%,-50%) scale(.94);
+      opacity:0; visibility:hidden; transition:opacity .25s, transform .25s, visibility 0s .25s;
+      width:min(92vw,420px); background:#fff; border-radius:18px; 
+      border:1px solid #eee; box-shadow:0 20px 60px rgba(0,0,0,.25); 
+      z-index:101; padding:18px 16px;
+    }
+    .modal.show{ opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); transition-delay:0s; }
+    .modal-backdrop.show{ opacity:1; visibility:visible; }
+    .modal-title{font-weight:900; font-size:18px; margin-bottom:14px; text-align:center}
+    .modal-field{margin-bottom:12px}
+    .modal-label{display:block; margin-bottom:6px; font-weight:700; color:#4b5563}
+    .modal-input{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+      background:#f9fafb; font-family:inherit; font-size:14px
+    }
+    .modal-actions{display:flex; gap:10px; margin-top:16px}
+    .modal-btn{
+      flex:1; padding:10px; border-radius:10px; border:1px solid var(--line);
+      background:#fff; font-weight:800; cursor:pointer
+    }
+    .modal-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+    .modal-close{
+      position:absolute; inset-inline-end:12px; top:12px; width:34px; height:34px; border-radius:50%;
+      border:1px solid #e5e7eb; background:#fff; cursor:pointer; font-weight:900; font-size:14px
+    }
 
+    .empty{padding:14px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:10px}
     .toast{
       position:fixed; bottom:18px; left:50%; transform:translateX(-50%) scale(.96);
       background:rgba(17,17,17,.92); color:#fff; padding:8px 12px; border-radius:10px; font-weight:800; font-size:12px;
@@ -60,16 +109,15 @@
     .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
   </style>
   
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#BBCF38">
-  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
 </head>
 <body>
 
-  <!-- الشريط العلوي (زر خروج بالأعلى) -->
+  <!-- الشريط العلوي -->
   <header class="topbar">
     <button class="btn" id="backBtn" title="خروج"><span class="ms">arrow_back_ios_new</span></button>
-    <div class="title"><span class="dot"></span><span>قيود التحويل</span></div>
+    <div class="title"><span class="dot"></span><span>القيود من الرصيد إلى العقد المقفل</span></div>
     <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
   </header>
 
@@ -87,9 +135,41 @@
     </section>
   </main>
 
+  <!-- Modal تعديل المبلغ -->
+  <div id="editModalBack" class="modal-backdrop"></div>
+  <div id="editModal" class="modal" role="dialog" aria-modal="true">
+    <button id="editClose" class="modal-close">✕</button>
+    <div class="modal-title">تعديل مبلغ القيد</div>
+    
+    <div class="modal-field">
+      <label class="modal-label">المستخدم</label>
+      <input id="currentUser" class="modal-input" readonly>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">المبلغ الحالي المقفل</label>
+      <input id="currentAmount" class="modal-input" readonly>
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">المبلغ الجديد للمقفل</label>
+      <input id="newAmount" class="modal-input" type="number" min="0" step="0.01" placeholder="أدخل المبلغ الجديد">
+    </div>
+    
+    <div class="modal-field">
+      <label class="modal-label">سبب التعديل (اختياري)</label>
+      <input id="editReason" class="modal-input" type="text" placeholder="سبب التعديل">
+    </div>
+    
+    <div class="modal-actions">
+      <button id="editCancel" class="modal-btn">إلغاء</button>
+      <button id="editSave" class="modal-btn primary">حفظ التعديل</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
-  <!-- ✅ Firebase (Compat) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
@@ -100,7 +180,6 @@
 
     /* ===== أزرار ===== */
     $("#backBtn").addEventListener('click', ()=>{ if(history.length>1) history.back(); else window.location.replace(BACK_TO); });
-    $("#refreshBtn").addEventListener('click', ()=>{ render(lastRows); toast('تم التحديث'); });
     function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200); }
     function setLive(ok){
       const live = $("#live");
@@ -120,116 +199,288 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    /* ===== متغيرات عامة ===== */
+    const userCache = new Map();
+    let lastRows = [];
+    let currentEditRow = null;
+    
+    // المسارات المحتملة للقيود (جديدة + قديمة)
+    const POSSIBLE_LOCK_PATHS = [
+      'balance_to_locked',
+      'balance-to-locked',
+      'locked_entries',
+      'ledger/balanceToLocked',
+      'constraints_locked',
+      'balanceLocks',
+      'user_locks'
+    ];
+
     /* ===== كاش بيانات المستخدم ===== */
-    const userCache = new Map(); // uid -> {name, accountId}
     async function getProfile(uid){
-      if(!uid) return {name:'—', accountId:'—'};
+      if(!uid) return {name:'—', accountId:'—', balance:0, lockedAmount:0};
       if(userCache.has(uid)) return userCache.get(uid);
       try{
         const snap = await db.ref('users/'+uid).get();
         const v = snap.val()||{};
-        const prof = { name: v.name || v.username || '—', accountId: v.accountId || v.id || '—' };
+        const prof = { 
+          name: v.name || v.username || '—', 
+          accountId: v.accountId || v.id || '—',
+          balance: Number(v.balance || 0),
+          lockedAmount: Number(v.lockedAmount || 0)
+        };
         userCache.set(uid, prof);
         return prof;
-      }catch(_){ return {name:'—', accountId:'—'}; }
+      }catch(_){ return {name:'—', accountId:'—', balance:0, lockedAmount:0}; }
     }
 
-    /* ===== كشف إذا كان العقد ابن يحتوي سجلات أو سجل مفرد ===== */
-    function looksLikeRecord(v){
-      return v && (v.amount!=null || v.amt!=null || v.type==='BAL_TO_LOCK' || v.to==='locked' || v.lockedAmount!=null);
+    /* ===== دالة للبحث عن جميع المستخدمين الذين لديهم lockedAmount > 0 ===== */
+    async function findUsersWithLocks(){
+      try{
+        const usersSnap = await db.ref('users').get();
+        if(!usersSnap.exists()) return [];
+        
+        const users = [];
+        usersSnap.forEach(child => {
+          const user = child.val();
+          const uid = child.key;
+          const lockedAmount = Number(user.lockedAmount || 0);
+          
+          if(lockedAmount > 0){
+            users.push({
+              uid,
+              name: user.name || user.username || '—',
+              accountId: user.accountId || '—',
+              lockedAmount,
+              balance: Number(user.balance || 0),
+              timestamp: user.lockedAt || user.updatedAt || Date.now()
+            });
+          }
+        });
+        
+        return users;
+      }catch(e){
+        console.error("Error finding users with locks:", e);
+        return [];
+      }
     }
 
-    /* ===== توحيد الحقول ===== */
-    function normalize(v, key, parentUid){
-      const uid = v.uid || v.userUid || v.user_uid || v.ownerUid || parentUid || null;
-      const amount = Number(v.amount ?? v.amt ?? v.delta ?? 0);
-      const ts = v.createdAt || v.created_at || v.timestamp || v.ts || Date.now();
-      const name = v.userName || v.user_name || v.name || null;
+    /* ===== دالة للبحث في المسارات القديمة للقيود ===== */
+    async function searchInLockPaths(){
+      const allRows = [];
+      
+      for(const path of POSSIBLE_LOCK_PATHS){
+        try{
+          const snap = await db.ref(path).get();
+          if(snap.exists()){
+            console.log(`Found data in path: ${path}`);
+            
+            snap.forEach(child1 => {
+              const val1 = child1.val();
+              
+              // إذا كان مستوى أولي
+              if(val1 && (val1.amount != null || val1.userId || val1.uid)){
+                const row = createLockRow(val1, child1.key, null);
+                if(row) allRows.push(row);
+              }
+              // إذا كان هناك مستوى ثانوي {userId: {lockId: data}}
+              else if(val1 && typeof val1 === 'object'){
+                Object.keys(val1).forEach(userKey => {
+                  const userData = val1[userKey];
+                  if(userData && typeof userData === 'object'){
+                    Object.keys(userData).forEach(lockKey => {
+                      const lockData = userData[lockKey];
+                      const row = createLockRow(lockData, lockKey, userKey);
+                      if(row) allRows.push(row);
+                    });
+                  }
+                });
+              }
+            });
+          }
+        }catch(e){
+          console.log(`No data in path ${path}:`, e.message);
+        }
+      }
+      
+      return allRows;
+    }
+
+    /* ===== إنشاء صف قيد ===== */
+    function createLockRow(data, key, parentUid){
+      if(!data) return null;
+      
+      const uid = data.uid || data.userId || data.user_id || parentUid;
+      const amount = Number(data.amount ?? data.lockedAmount ?? data.value ?? 0);
+      
+      if(!uid || amount <= 0) return null;
+      
+      const ts = data.createdAt || data.created_at || data.timestamp || data.ts || data.date || Date.now();
+      const name = data.userName || data.name || data.username;
+      const type = data.type || 'BAL_TO_LOCK';
+      const edited = data.edited || false;
+      const originalAmount = data.originalAmount || amount;
+      const editHistory = data.editHistory || [];
+      
       return {
-        id: key || v.id || v.ref || '',
+        id: key,
         uid,
-        userName: name, // قد نغذّيها لاحقاً من users
+        userName: name,
         amount,
+        originalAmount,
+        type,
+        edited,
+        editHistory,
         tsISO: new Date(ts).toISOString(),
-        tsLocal: new Date(ts).toLocaleString()
+        tsLocal: new Date(ts).toLocaleString(),
+        accountId: null,
+        source: 'lock_path' // مصدر البيانات
       };
     }
 
-    /* ===== جمع السجلات من عدة مسارات مدعومة =====
-       - ledger/balanceToLocked/{uid}/{tx}
-       - balanceToLocked/{uid}/{tx}
-       - balanceToLocked/{tx}
-    */
-    const refs = [
-      db.ref('ledger/balanceToLocked'),
-      db.ref('balanceToLocked')
-    ];
-
-    let lastRows = [];
-
-    async function handleSnapshot(snap){
-      const rows = [];
-      snap.forEach(l1=>{
-        const v1 = l1.val();
-        if(looksLikeRecord(v1)){
-          rows.push( normalize(v1, l1.key, null) );
-        }else{
-          // طبقة uid -> tx
-          l1.forEach(l2=>{
-            const v2 = l2.val()||{};
-            rows.push( normalize(v2, l2.key, l1.key) );
-          });
-        }
-      });
-
-      // إكمال أسماء المستخدمين من users/{uid} عند الحاجة
-      const need = Array.from(new Set(rows.filter(r=>(!r.userName && r.uid)).map(r=>r.uid)));
-      await Promise.all( need.map(uid=>getProfile(uid)) );
-      rows.forEach(r=>{
-        if((!r.userName) && r.uid){
-          const p = userCache.get(r.uid) || {};
-          r.userName = p.name || '—';
-        }
-      });
-
-      lastRows = rows;
-      render(rows);
-    }
-
-    // سنستمع لأول مسار موجود؛ وإن كان فارغًا نجرّب الآخر
-    function attachListeners(){
-      // ألغِ أي مستمعات قديمة
-      refs.forEach(ref=>ref.off('value'));
-
-      // جرّب الأول
-      refs[0].once('value').then(s=>{
-        if(s.exists()){
-          setLive(true);
-          refs[0].on('value', handleSnapshot, _=>setLive(false));
-        }else{
-          // جرّب الثاني
-          refs[1].once('value').then(s2=>{
-            if(s2.exists()){
-              setLive(true);
-              refs[1].on('value', handleSnapshot, _=>setLive(false));
-            }else{
-              // لا يوجد سجلات بعد
-              lastRows = [];
-              render([]);
+    /* ===== دالة للتحقق من حالة القفل للمستخدم ===== */
+    async function checkUserLockedStatus(uid){
+      try{
+        // التحقق من التداولات النشطة
+        const tradingRef = db.ref('trading');
+        const tradingSnap = await tradingRef.orderByChild('userId').equalTo(uid).limitToFirst(1).get();
+        const hasActiveTrading = tradingSnap.exists();
+        
+        // التحقق من الاستثمارات النشطة
+        const investmentsRef = db.ref('investments');
+        const investmentsSnap = await investmentsRef.orderByChild('userId').equalTo(uid).limitToFirst(1).get();
+        const hasInvestments = investmentsSnap.exists();
+        
+        // التحقق من السحوبات النشطة
+        const withdrawalsRef = db.ref('withdrawals/' + uid);
+        const withdrawalsSnap = await withdrawalsRef.get();
+        let hasActiveWithdrawal = false;
+        
+        if(withdrawalsSnap.exists()){
+          withdrawalsSnap.forEach(child => {
+            if(child.key !== 'current') {
+              const data = child.val();
+              if(data.status === 'pending' || data.status === 'processing') {
+                hasActiveWithdrawal = true;
+              }
             }
           });
         }
-      }).catch(_=>{
-        // في حال خطأ عام
-        setLive(false);
-      });
+        
+        const isLocked = hasActiveTrading || hasInvestments || hasActiveWithdrawal;
+        
+        return {
+          isLocked,
+          reasons: {
+            hasActiveTrading,
+            hasInvestments,
+            hasActiveWithdrawal
+          }
+        };
+      }catch(e){
+        console.error("Error checking user lock status:", e);
+        return { isLocked: false, reasons: {} };
+      }
     }
-    attachListeners();
 
-    /* ===== عرض ===== */
+    /* ===== تحميل جميع البيانات ===== */
+    async function loadAllData(){
+      try{
+        toast('جاري تحميل البيانات...');
+        
+        // 1. البحث عن المستخدمين الذين لديهم lockedAmount > 0
+        const usersWithLocks = await findUsersWithLocks();
+        
+        // 2. البحث في المسارات القديمة للقيود
+        const oldLocks = await searchInLockPaths();
+        
+        // 3. دمج النتائج
+        const allRows = [];
+        
+        // إضافة المستخدمين من lockedAmount
+        usersWithLocks.forEach(user => {
+          allRows.push({
+            id: `user_lock_${user.uid}`,
+            uid: user.uid,
+            userName: user.name,
+            amount: user.lockedAmount,
+            originalAmount: user.lockedAmount,
+            type: 'BAL_TO_LOCK',
+            edited: false,
+            editHistory: [],
+            tsISO: new Date(user.timestamp).toISOString(),
+            tsLocal: new Date(user.timestamp).toLocaleString(),
+            accountId: user.accountId,
+            source: 'user_lockedAmount'
+          });
+        });
+        
+        // إضافة القيود من المسارات القديمة
+        oldLocks.forEach(lock => {
+          allRows.push(lock);
+        });
+        
+        // 4. إكمال بيانات المستخدمين
+        const uniqueUids = [...new Set(allRows.map(r => r.uid).filter(Boolean))];
+        await Promise.all(uniqueUids.map(uid => getProfile(uid)));
+        
+        // 5. تحديث الأسماء وبيانات الحساب
+        allRows.forEach(row => {
+          if(row.uid){
+            const profile = userCache.get(row.uid);
+            if(profile){
+              row.userName = profile.name || row.userName || '—';
+              row.accountId = profile.accountId || '—';
+            }
+          }
+        });
+        
+        // 6. حفظ وعرض البيانات
+        lastRows = allRows;
+        await render(allRows);
+        
+        toast(`تم تحميل ${allRows.length} قيد`);
+        setLive(true);
+        
+      }catch(e){
+        console.error("Error loading data:", e);
+        toast('تعذر تحميل البيانات');
+        setLive(false);
+      }
+    }
+
+    /* ===== التنسيق والعرض ===== */
     function fmtAmt(n){ return Number(n||0).toFixed(2); }
-    function rowEl(x){
+
+    async function rowEl(x){
       const d = document.createElement('div');
+      
+      // التحقق من حالة القفل للمستخدم
+      const lockStatus = await checkUserLockedStatus(x.uid);
+      
+      let isLocked = lockStatus.isLocked;
+      let canEdit = !isLocked;
+      let canDelete = !isLocked;
+      
+      let lockReason = '';
+      if(isLocked){
+        const reasons = [];
+        if(lockStatus.reasons.hasActiveTrading) reasons.push('تداول نشط');
+        if(lockStatus.reasons.hasInvestments) reasons.push('استثمارات');
+        if(lockStatus.reasons.hasActiveWithdrawal) reasons.push('سحب نشط');
+        lockReason = reasons.join('، ');
+        d.classList.add('locked');
+      }
+      
+      if(x.edited){
+        d.classList.add('edited');
+      }
+      
+      // إظهار مصدر البيانات
+      const sourceBadge = x.source === 'user_lockedAmount' ? ' (من الرصيد)' : ' (من السجلات)';
+      
+      const statusText = x.edited ? 'تم التعديل' : (isLocked ? 'مقفل' : 'نشط');
+      const statusClass = x.edited ? 'status-edited' : (isLocked ? 'status-locked' : 'status-active');
+      
       d.className = 'row';
       d.innerHTML = `
         <div class="main">
@@ -240,21 +491,278 @@
           <span class="badge">إلى العقد المقفل</span>
           <span class="sep">·</span>
           <span class="amt">${fmtAmt(x.amount)}</span>
+          ${x.edited ? `<span class="sep">·</span><span class="amt" style="text-decoration:line-through;color:#9ca3af">${fmtAmt(x.originalAmount)}</span>` : ''}
           <span class="sep">·</span>
-          <span class="time">${x.tsLocal || '-'}</span>
+          <span class="time">${x.tsLocal}</span>
+          <span class="sep">·</span>
+          <span class="status-badge ${statusClass}">${statusText}${sourceBadge}</span>
+          ${isLocked ? `<span class="sep">·</span><span class="time" style="color:#dc2626;font-size:11px">${lockReason}</span>` : ''}
+        </div>
+
+        <div class="actions">
+          <button class="chip edit" data-action="edit" ${!canEdit ? 'disabled' : ''}>تعديل المبلغ</button>
+          <button class="chip delete" data-action="delete" ${!canDelete ? 'disabled' : ''}>حذف</button>
         </div>
       `;
+
+      // إضافة مستمعي الأحداث
+      const editBtn = d.querySelector('[data-action="edit"]');
+      const deleteBtn = d.querySelector('[data-action="delete"]');
+      
+      if(editBtn && canEdit){
+        editBtn.addEventListener('click', () => openEditModal(x));
+      }
+      
+      if(deleteBtn && canDelete){
+        deleteBtn.addEventListener('click', () => deleteLock(x));
+      }
+
       return d;
     }
 
-    function render(rows){
+    /* ===== Modal التعديل ===== */
+    function openEditModal(row){
+      currentEditRow = row;
+      $("#currentUser").value = `${row.userName} (${row.accountId})`;
+      $("#currentAmount").value = fmtAmt(row.amount);
+      $("#newAmount").value = '';
+      $("#editReason").value = '';
+      
+      $("#editModalBack").classList.add('show');
+      $("#editModal").classList.add('show');
+    }
+
+    function closeEditModal(){
+      $("#editModalBack").classList.remove('show');
+      $("#editModal").classList.remove('show');
+      currentEditRow = null;
+    }
+
+    $("#editClose").addEventListener('click', closeEditModal);
+    $("#editModalBack").addEventListener('click', closeEditModal);
+    $("#editCancel").addEventListener('click', closeEditModal);
+
+    $("#editSave").addEventListener('click', async () => {
+      if(!currentEditRow) return;
+      
+      const newAmount = parseFloat($("#newAmount").value);
+      const reason = $("#editReason").value.trim();
+      
+      if(!newAmount || newAmount < 0){
+        toast('أدخل مبلغاً صحيحاً');
+        return;
+      }
+      
+      if(newAmount === currentEditRow.amount){
+        toast('المبلغ الجديد مطابق للقديم');
+        closeEditModal();
+        return;
+      }
+      
+      // التحقق من الحالة قبل التعديل
+      const lockStatus = await checkUserLockedStatus(currentEditRow.uid);
+      
+      if(lockStatus.isLocked){
+        toast('لا يمكن التعديل - المستخدم مقفل');
+        closeEditModal();
+        return;
+      }
+      
+      try{
+        // تحديث lockedAmount في جدول users
+        const userRef = db.ref('users/' + currentEditRow.uid);
+        const userSnap = await userRef.get();
+        const userData = userSnap.val() || {};
+        
+        const currentLocked = Number(userData.lockedAmount || 0);
+        const currentBalance = Number(userData.balance || 0);
+        
+        // حساب الفرق
+        const difference = newAmount - currentLocked;
+        
+        // إذا زاد المبلغ المقفل، نخصم من الرصيد العادي
+        if(difference > 0){
+          if(currentBalance >= difference){
+            await userRef.update({
+              lockedAmount: newAmount,
+              balance: currentBalance - difference,
+              lockedUpdatedAt: Date.now(),
+              lastEditBy: 'admin'
+            });
+            toast('تم تعديل المبلغ بنجاح');
+          } else {
+            toast('الرصيد العادي غير كافٍ لزيادة المبلغ المقفل');
+            return;
+          }
+        }
+        // إذا قل المبلغ المقفل، نرجع الفرق للرصيد العادي
+        else if(difference < 0){
+          await userRef.update({
+            lockedAmount: newAmount,
+            balance: currentBalance + Math.abs(difference),
+            lockedUpdatedAt: Date.now(),
+            lastEditBy: 'admin'
+          });
+          toast('تم تعديل المبلغ بنجاح');
+        }
+        
+        // إذا كان هناك سجل في المسارات القديمة، نحدثه أيضاً
+        if(currentEditRow.source === 'lock_path'){
+          for(const path of POSSIBLE_LOCK_PATHS){
+            try{
+              const lockRef = db.ref(path + '/' + currentEditRow.id);
+              const lockSnap = await lockRef.get();
+              if(lockSnap.exists()){
+                const now = Date.now();
+                const currentData = lockSnap.val() || {};
+                const currentEditHistory = currentData.editHistory || [];
+                
+                const updates = {
+                  amount: newAmount,
+                  edited: true,
+                  editedAt: now,
+                  editedBy: 'admin',
+                  editReason: reason || 'تعديل من الأدمن'
+                };
+                
+                // أضف سجل التعديل
+                const editRecord = {
+                  previousAmount: currentEditRow.amount,
+                  newAmount: newAmount,
+                  timestamp: now,
+                  reason: reason || 'تعديل من الأدمن',
+                  by: 'admin'
+                };
+                
+                currentEditHistory.push(editRecord);
+                updates.editHistory = currentEditHistory;
+                
+                if(!currentData.originalAmount){
+                  updates.originalAmount = currentEditRow.amount;
+                }
+                
+                await lockRef.update(updates);
+                break;
+              }
+            }catch(e){
+              console.log(`Not found in ${path}`);
+            }
+          }
+        }
+        
+        closeEditModal();
+        
+        // إعادة تحميل البيانات
+        await loadAllData();
+        
+      }catch(e){
+        console.error("Error updating lock:", e);
+        toast('فشل التعديل');
+      }
+    });
+
+    /* ===== حذف القيد ===== */
+    async function deleteLock(row){
+      // التحقق قبل الحذف
+      const lockStatus = await checkUserLockedStatus(row.uid);
+      
+      if(lockStatus.isLocked){
+        toast('لا يمكن الحذف - المستخدم مقفل');
+        return;
+      }
+      
+      const confirmMsg = `هل تريد إزالة القيد ${fmtAmt(row.amount)} للمستخدم ${row.userName}؟\n\nسيتم إرجاع المبلغ للرصيد العادي للمستخدم.`;
+      
+      if(!confirm(confirmMsg)) return;
+      
+      try{
+        // إرجاع المبلغ للرصيد العادي
+        const userRef = db.ref('users/' + row.uid);
+        const userSnap = await userRef.get();
+        const userData = userSnap.val() || {};
+        
+        const currentLocked = Number(userData.lockedAmount || 0);
+        const currentBalance = Number(userData.balance || 0);
+        
+        // طرح المبلغ من المقفل وإضافته للرصيد العادي
+        const newLocked = Math.max(0, currentLocked - row.amount);
+        const newBalance = currentBalance + row.amount;
+        
+        await userRef.update({
+          lockedAmount: newLocked,
+          balance: newBalance,
+          lockedUpdatedAt: Date.now(),
+          lastEditBy: 'admin'
+        });
+        
+        // إذا كان هناك سجل في المسارات القديمة، نحذفه
+        if(row.source === 'lock_path'){
+          for(const path of POSSIBLE_LOCK_PATHS){
+            try{
+              const lockRef = db.ref(path + '/' + row.id);
+              const lockSnap = await lockRef.get();
+              if(lockSnap.exists()){
+                await lockRef.remove();
+                break;
+              }
+            }catch(e){
+              console.log(`Not found in ${path}`);
+            }
+          }
+        }
+        
+        toast('تم إزالة القيد وإرجاع المبلغ بنجاح');
+        
+        // إعادة تحميل البيانات
+        await loadAllData();
+      }catch(e){
+        console.error("Error deleting lock:", e);
+        toast('فشل الحذف');
+      }
+    }
+
+    /* ===== العرض ===== */
+    async function render(rows){
       const cont = $("#list"), empty=$("#empty");
       cont.innerHTML = '';
-      const sorted = (rows||[]).slice().sort((a,b)=> (b.tsISO||'').localeCompare(a.tsISO||''));
-      if(!sorted.length){ empty.style.display='block'; setLive(true); return; }
+      
+      const sorted = (rows||[]).slice().sort((a,b)=> b.tsISO.localeCompare(a.tsISO));
+      
+      if(!sorted.length){ 
+        empty.style.display='block'; 
+        empty.textContent = 'لا توجد قيود حالياً. المستخدمون الذين لديهم مبالغ مقفلة سيظهرون هنا.';
+        return; 
+      }
+      
       empty.style.display='none';
-      sorted.forEach(x=> cont.appendChild(rowEl(x)));
+      
+      // عرض الصفوف بشكل غير متزامن
+      for(const row of sorted){
+        const rowElement = await rowEl(row);
+        cont.appendChild(rowElement);
+      }
     }
+
+    /* ===== التحديث ===== */
+    $("#refreshBtn").addEventListener('click', async () => {
+      await loadAllData();
+    });
+
+    /* ===== التهيئة ===== */
+    async function init(){
+      await loadAllData();
+      
+      // تحديث تلقائي كل 30 ثانية
+      setInterval(async () => {
+        if(!document.hidden){
+          await loadAllData();
+        }
+      }, 30000);
+    }
+
+    // بدء التطبيق
+    init();
+
   })();
   </script>
   
@@ -264,9 +772,6 @@
       .then(reg => console.log("✔ Service Worker registered"))
       .catch(err => console.error("❌ Service Worker failed:", err));
   }
-</script>
-  
-  
-  
+  </script>
 </body>
 </html>

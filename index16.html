@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>المحذوفات – إدارة الحسابات</title>
+
+  <!-- خط وأيقونات جوجل -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@24,600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#BBCF38;
+      --accent-2:#89A61B;
+
+      /* Light */
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --line:rgba(15,23,42,.10);
+
+      --radius:18px;
+      --shadow-lg:0 18px 40px rgba(2,6,23,.10);
+      --shadow-md:0 10px 24px rgba(2,6,23,.08);
+      --glow:0 0 0 6px rgba(187,207,56,.18);
+
+      --chip: rgba(15,23,42,.06);
+      --chip-2: rgba(187,207,56,.16);
+
+      --bg-grad-1: rgba(187,207,56,.22);
+      --bg-grad-2: rgba(15,23,42,.08);
+      --body-start:#ffffff;
+    }
+
+    html[data-theme="dark"]{
+      --bg:#0b1220;
+      --card:rgba(17,24,39,.92);
+      --ink:#e5e7eb;
+      --muted:#94a3b8;
+      --line:rgba(255,255,255,.10);
+
+      --shadow-lg:0 18px 40px rgba(0,0,0,.35);
+      --shadow-md:0 10px 24px rgba(0,0,0,.25);
+
+      --chip: rgba(255,255,255,.08);
+      --chip-2: rgba(187,207,56,.14);
+
+      --bg-grad-1: rgba(187,207,56,.18);
+      --bg-grad-2: rgba(255,255,255,.06);
+      --body-start:#0b1220;
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(900px 420px at 95% -10%, var(--bg-grad-1) 0%, transparent 60%),
+        radial-gradient(700px 360px at -10% 110%, var(--bg-grad-2) 0%, transparent 60%),
+        linear-gradient(180deg, var(--body-start) 0%, var(--bg) 100%);
+    }
+
+    .ms{font-family:'Material Symbols Rounded'; line-height:1}
+
+    /* Topbar */
+    .topbar{
+      position:sticky; top:0; z-index:30;
+      backdrop-filter:saturate(150%) blur(12px);
+      background:rgba(255,255,255,.72);
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px;
+    }
+    html[data-theme="dark"] .topbar{ background:rgba(15,23,42,.65); }
+
+    .brand{display:flex; align-items:center; gap:10px; font-weight:900}
+    .dot{
+      width:12px;height:12px;border-radius:50%;
+      background:linear-gradient(180deg,var(--accent),var(--accent-2));
+      box-shadow:0 0 0 4px rgba(187,207,56,.22);
+    }
+    .top-actions{display:flex;gap:8px}
+
+    .btn{
+      width:40px;height:40px; display:grid; place-items:center; cursor:pointer;
+      border:1px solid var(--line); border-radius:12px;
+      background:rgba(255,255,255,.75);
+      box-shadow:0 8px 16px rgba(2,6,23,.06);
+      transition:transform .08s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    html[data-theme="dark"] .btn{
+      background:rgba(255,255,255,.06);
+      box-shadow:0 8px 16px rgba(0,0,0,.25);
+    }
+    .btn:hover{border-color:rgba(187,207,56,.35); box-shadow:0 12px 26px rgba(2,6,23,.10), var(--glow)}
+    .btn:active{transform:translateY(1px)}
+
+    .container{max-width:1200px; margin:0 auto; padding:18px 14px 96px}
+
+    .hero{
+      position:relative;
+      border-radius:calc(var(--radius) + 4px);
+      padding:18px 18px 14px;
+      background:
+        radial-gradient(260px 160px at 10% 0%, rgba(187,207,56,.20), transparent 60%),
+        radial-gradient(280px 170px at 95% -10%, rgba(15,23,42,.06), transparent 65%),
+        var(--card);
+      border:1px solid rgba(15,23,42,.08);
+      box-shadow:var(--shadow-lg);
+      display:grid; gap:10px; overflow:hidden;
+    }
+    html[data-theme="dark"] .hero{ border:1px solid rgba(255,255,255,.10); }
+
+    .hero-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+    .hero-title{display:flex; align-items:center; gap:10px}
+    .hero-title h1{margin:0; font-size:20px; font-weight:900}
+    .hint{margin:0; color:var(--muted); font-weight:800; font-size:13px}
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(15,23,42,.10);
+      background:var(--chip);
+      font-weight:900; color:var(--muted);
+    }
+    html[data-theme="dark"] .pill{ border:1px solid rgba(255,255,255,.12); }
+
+    .bar{
+      display:flex; gap:10px; flex-wrap:wrap;
+      align-items:center;
+    }
+    .input{
+      flex:1;
+      min-width:240px;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.85);
+      font-weight:800;
+      color:var(--ink);
+      outline:none;
+    }
+    html[data-theme="dark"] .input{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:var(--ink);
+    }
+    .input:focus{border-color:rgba(187,207,56,.55); box-shadow:0 0 0 6px rgba(187,207,56,.12)}
+    .ghost{
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.75);
+      font-weight:900;
+      cursor:pointer;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    html[data-theme="dark"] .ghost{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:var(--ink);
+    }
+
+    .section{
+      margin-top:14px;
+      border-radius:18px;
+      padding:14px;
+      background:var(--card);
+      border:1px solid rgba(15,23,42,.08);
+      box-shadow:var(--shadow-md);
+    }
+    html[data-theme="dark"] .section{ border:1px solid rgba(255,255,255,.10); }
+
+    .list{display:grid; gap:12px}
+    .card{
+      border-radius:18px;
+      border:1px solid rgba(15,23,42,.10);
+      background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(246,247,251,.72));
+      box-shadow:0 12px 22px rgba(2,6,23,.06);
+      padding:12px;
+      display:grid; gap:10px;
+    }
+    html[data-theme="dark"] .card{
+      border:1px solid rgba(255,255,255,.10);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow:0 12px 22px rgba(0,0,0,.28);
+    }
+
+    .card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap}
+    .who{display:flex; align-items:center; gap:10px}
+    .ic{
+      width:44px;height:44px;border-radius:16px;
+      display:grid; place-items:center;
+      background:rgba(187,207,56,.16);
+      border:1px solid rgba(187,207,56,.22);
+      color:var(--accent-2);
+      font-size:22px;
+    }
+    .meta{display:grid; gap:2px}
+    .name{font-weight:900; font-size:16px}
+    .small{color:var(--muted); font-weight:800; font-size:12px; direction:ltr; text-align:right}
+    .small.rtl{direction:rtl; text-align:right}
+
+    .tags{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .tag{
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.10);
+      background:var(--chip);
+      font-weight:900;
+      font-size:11px;
+      color:var(--muted);
+    }
+    html[data-theme="dark"] .tag{ border:1px solid rgba(255,255,255,.10); }
+
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    .a-btn{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.8);
+      cursor:pointer;
+      font-weight:900;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    html[data-theme="dark"] .a-btn{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:var(--ink);
+    }
+    .a-btn.primary{
+      border-color:rgba(187,207,56,.55);
+      background:linear-gradient(180deg, var(--accent), var(--accent-2));
+      color:#0b120f;
+    }
+    .a-btn.danger{
+      border-color:rgba(239,68,68,.35);
+      background:rgba(239,68,68,.10);
+      color:#b91c1c;
+    }
+    html[data-theme="dark"] .a-btn.danger{ color:#fecaca; }
+
+    .empty{
+      display:none;
+      text-align:center;
+      padding:14px;
+      border-radius:16px;
+      border:1px dashed rgba(15,23,42,.18);
+      background:rgba(255,255,255,.7);
+      color:var(--muted);
+      font-weight:900;
+    }
+    html[data-theme="dark"] .empty{
+      border:1px dashed rgba(255,255,255,.18);
+      background:rgba(255,255,255,.04);
+    }
+
+    /* Toast */
+    #toast{
+      position:fixed;bottom:24px;left:50%;
+      transform:translateX(-50%) scale(.96);
+      background:rgba(15,23,42,.92);
+      color:#fff;padding:8px 12px;border-radius:12px;
+      font-weight:900;font-size:12px;opacity:0;pointer-events:none;
+      transition:.25s;z-index:70
+    }
+    #toast.show{opacity:1;transform:translateX(-50%) scale(1)}
+
+    /* Modal confirm */
+    .modal{
+      position:fixed; inset:0; z-index:99;
+      display:none; align-items:center; justify-content:center;
+      padding:16px;
+      background:rgba(2,6,23,.35);
+    }
+    .modal.show{display:flex}
+    .panel{
+      width:min(420px, 96vw);
+      background:var(--card);
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:18px;
+      box-shadow:0 22px 60px rgba(2,6,23,.22);
+      overflow:hidden;
+    }
+    html[data-theme="dark"] .panel{
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 22px 60px rgba(0,0,0,.55);
+    }
+    .panel-h{
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      font-weight:900;
+    }
+    .panel-b{padding:14px; display:grid; gap:10px}
+    .panel-f{
+      padding:12px 14px;
+      border-top:1px solid var(--line);
+      display:flex; gap:10px; flex-wrap:wrap;
+      background:rgba(255,255,255,.55);
+    }
+    html[data-theme="dark"] .panel-f{background:rgba(255,255,255,.03)}
+  </style>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span><span>المحذوفات</span></div>
+    <div class="top-actions">
+      <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
+      <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-head">
+        <div class="hero-title">
+          <span class="ms" style="font-size:22px;color:var(--accent-2)">delete_sweep</span>
+          <h1>سجل المحذوفات</h1>
+        </div>
+        <div class="pill"><span class="ms">inventory_2</span> <span>الإجمالي: </span><span id="totalTrash">0</span></div>
+      </div>
+
+      <p class="hint">تظهر هنا الحسابات التي تم نقلها إلى <span style="font-weight:900; direction:ltr">trash_users</span>. يمكنك الاسترجاع أو الحذف النهائي.</p>
+
+      <div class="bar">
+        <input id="q" class="input" type="search" placeholder="بحث بالاسم / username / accountId / phone / uid">
+        <button class="ghost" id="clearBtn"><span class="ms">backspace</span> مسح</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div id="list" class="list"></div>
+      <div id="empty" class="empty">لا توجد حسابات في المحذوفات الآن.</div>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="panel" role="dialog" aria-modal="true">
+      <div class="panel-h">
+        <span id="mTitle">تأكيد</span>
+        <button class="btn" id="mClose" title="إغلاق"><span class="ms">close</span></button>
+      </div>
+      <div class="panel-b">
+        <div id="mText" style="font-weight:900;color:var(--muted)"></div>
+      </div>
+      <div class="panel-f">
+        <button class="a-btn" id="mCancel"><span class="ms">close</span> إلغاء</button>
+        <button class="a-btn danger" id="mOk"><span class="ms">check</span> موافق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    // ✅ تطبيق الثيم المحفوظ من الصفحة الرئيسية
+    (function(){
+      const KEY = "main_theme_choice";
+      const saved = localStorage.getItem(KEY) || "light";
+      document.documentElement.setAttribute("data-theme", saved === "dark" ? "dark" : "light");
+    })();
+
+    // أدوات
+    const $ = s=>document.querySelector(s);
+    function toast(m){
+      const t=$("#toast"); if(!t) return;
+      t.textContent=m; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 1400);
+    }
+    function fmtTime(ts){
+      if(!ts) return "—";
+      const n = Number(ts);
+      const ms = (n > 1e11) ? n : (n > 1e9 ? n*1000 : n);
+      try{ return new Date(ms).toLocaleString('ar-EG',{hour12:false}); }catch{ return "—"; }
+    }
+    function safe(v){ return (v===undefined || v===null) ? "" : String(v); }
+    function contains(hay, needle){
+      return safe(hay).toLowerCase().includes(safe(needle).toLowerCase());
+    }
+
+    // مودال تأكيد
+    const modal = $("#modal");
+    let onOk = null;
+    function confirmBox(title, text, okFn){
+      $("#mTitle").textContent = title;
+      $("#mText").textContent  = text;
+      onOk = okFn || null;
+      modal.classList.add("show");
+    }
+    function closeModal(){
+      modal.classList.remove("show");
+      onOk = null;
+    }
+    $("#mClose").onclick = closeModal;
+    $("#mCancel").onclick = closeModal;
+    modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(); });
+    $("#mOk").onclick = async ()=>{
+      if(typeof onOk === "function"){
+        try{ await onOk(); }catch(e){ console.error(e); toast("فشل التنفيذ"); }
+      }
+      closeModal();
+    };
+
+    // أزرار
+    $("#refreshBtn").onclick = ()=>location.reload();
+    $("#backBtn").onclick = ()=>{
+      if(history.length>1) history.back();
+      else location.replace("index.html");
+    };
+    $("#clearBtn").onclick = ()=>{
+      $("#q").value = "";
+      render();
+    };
+    $("#q").addEventListener("input", ()=>render());
+
+    // Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+      authDomain: "dynex-f4486.firebaseapp.com",
+      databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+      projectId: "dynex-f4486",
+      storageBucket: "dynex-f4486.firebasestorage.app"
+    };
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // بيانات
+    let trashMap = {};
+    let trashArr = [];
+
+    async function loadTrash(){
+      const snap = await db.ref("trash_users").get().catch(()=>null);
+      trashMap = (snap && snap.exists()) ? (snap.val() || {}) : {};
+      trashArr = Object.keys(trashMap).map(uid=>{
+        const u = trashMap[uid] || {};
+        return {
+          uid,
+          name: u.name || u.fullName || u.displayName || u.username || ("حساب " + (u.accountId||"")),
+          username: u.username || "",
+          accountId: u.accountId || u.accountID || u.accId || "",
+          phone: u.phone || "",
+          deletedAt: u.deletedAt || u.deleted_at || u.deleted_ts || u.deletedTime || 0,
+          reason: u.deletedReason || u.reason || "",
+          raw: u
+        };
+      });
+
+      // ترتيب: الأحدث أولاً
+      trashArr.sort((a,b)=> (Number(b.deletedAt||0) - Number(a.deletedAt||0)));
+      $("#totalTrash").textContent = trashArr.length.toLocaleString("ar-EG");
+      render();
+    }
+
+    function matchItem(item, q){
+      if(!q) return true;
+      return (
+        contains(item.uid, q) ||
+        contains(item.name, q) ||
+        contains(item.username, q) ||
+        contains(item.accountId, q) ||
+        contains(item.phone, q)
+      );
+    }
+
+    function render(){
+      const q = $("#q").value.trim();
+      const list = $("#list");
+      const empty = $("#empty");
+      list.innerHTML = "";
+
+      const filtered = trashArr.filter(x=>matchItem(x,q));
+      if(!filtered.length){
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+
+      filtered.forEach(item=>{
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerHTML = `
+          <div class="card-top">
+            <div class="who">
+              <div class="ic"><span class="ms">person_off</span></div>
+              <div class="meta">
+                <div class="name">${safe(item.name) || "—"}</div>
+                <div class="small" title="UID">${safe(item.uid)}</div>
+              </div>
+            </div>
+            <div class="tags">
+              <span class="tag" title="Username">@${safe(item.username) || "—"}</span>
+              <span class="tag" title="AccountID">${safe(item.accountId) || "—"}</span>
+              <span class="tag" title="Phone" style="direction:ltr">${safe(item.phone) || "—"}</span>
+            </div>
+          </div>
+
+          <div class="small rtl"><span class="ms" style="font-size:16px;vertical-align:-3px">schedule</span> وقت الحذف: <b>${fmtTime(item.deletedAt)}</b></div>
+          ${item.reason ? `<div class="small rtl"><span class="ms" style="font-size:16px;vertical-align:-3px">info</span> السبب: <b>${safe(item.reason)}</b></div>` : ``}
+
+          <div class="actions">
+            <button class="a-btn primary" data-act="restore" data-uid="${item.uid}">
+              <span class="ms">restore</span> استرجاع
+            </button>
+            <button class="a-btn danger" data-act="purge" data-uid="${item.uid}">
+              <span class="ms">delete_forever</span> حذف نهائي
+            </button>
+          </div>
+        `;
+        list.appendChild(d);
+      });
+
+      // Actions
+      list.querySelectorAll("button[data-act]").forEach(btn=>{
+        btn.addEventListener("click", async ()=>{
+          const uid = btn.getAttribute("data-uid");
+          const act = btn.getAttribute("data-act");
+          if(!uid) return;
+
+          if(act === "restore"){
+            confirmBox("استرجاع الحساب", "هل تريد استرجاع هذا الحساب وإعادته إلى users ؟", async ()=>{
+              await restoreUser(uid);
+            });
+          }else if(act === "purge"){
+            confirmBox("حذف نهائي", "هذا سيحذف الحساب نهائيًا من trash_users ولا يمكن استرجاعه. متأكد؟", async ()=>{
+              await purgeUser(uid);
+            });
+          }
+        });
+      });
+    }
+
+    // ✅ استرجاع: trash_users/<uid> -> users/<uid> ثم حذف من trash_users
+    async function restoreUser(uid){
+      const u = trashMap[uid];
+      if(!u){ toast("الحساب غير موجود"); return; }
+
+      // تنظيف حقول الحذف (اختياري)
+      const copy = Object.assign({}, u);
+      delete copy.deletedAt;
+      delete copy.deleted_at;
+      delete copy.deleted_ts;
+      delete copy.deletedTime;
+      delete copy.deletedReason;
+      delete copy.reason;
+
+      // رجّعه إلى users
+      await db.ref("users/"+uid).set(copy);
+
+      // (اختياري) رجّع فهرس username إذا موجود
+      const uname = copy.username;
+      if(uname){
+        await db.ref("usernames/"+uname).set(uid).catch(()=>{});
+      }
+
+      // احذف من سلة المحذوفات
+      await db.ref("trash_users/"+uid).remove();
+
+      toast("تم الاسترجاع");
+      await loadTrash();
+    }
+
+    // ✅ حذف نهائي من trash_users فقط
+    async function purgeUser(uid){
+      await db.ref("trash_users/"+uid).remove();
+      toast("تم الحذف النهائي");
+      await loadTrash();
+    }
+
+    // تشغيل
+    loadTrash();
+  </script>
+
+  <!-- ✅ ملاحظة مهمة لك (بدون تغيير بالكود): 
+       عند حذف حساب من صفحة الإدارة (index14.html) لازم تسوي نقل مثل:
+       1) اقرأ users/uid
+       2) اكتب trash_users/uid = userData + {deletedAt: Date.now()}
+       3) احذف users/uid
+       4) احذف usernames/<username> إذا عندك فهرس
+  -->
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>إدارة الحسابات | نظام الشركة</title>
+
+  <!-- خط وأيقونة -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@24,600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+      --card:#fff; --bg:#f6f7f9; --radius:14px; --top:60px;
+      --danger:#ef4444; --warn:#f59e0b; --ok:#22c55e;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
+
+    /* شريط علوي */
+    .topbar{
+      position:fixed; inset-inline:0; top:0; height:var(--top); background:var(--card);
+      border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:10;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .brand .dot{width:14px;height:14px;border-radius:50%;background:var(--accent)}
+    .top-actions{display:flex; gap:8px; align-items:center}
+    .btn{
+      display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);
+      border-radius:10px;background:#fff;cursor:pointer
+    }
+    .ms{font-family:'Material Symbols Rounded'}
+
+    /* الحاوية */
+    .wrap{min-height:100dvh; padding:calc(var(--top) + 16px) 16px 24px; max-width:1200px; margin:0 auto}
+    .row2{display:flex; gap:12px; flex-wrap:wrap; align-items:stretch}
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      box-shadow:0 10px 24px rgba(0,0,0,.06); padding:16px;
+    }
+    .card.head{flex:1; min-width:280px}
+    .card.side{width:min(380px,100%);}
+
+    h1{margin:0 0 6px; font-size:22px}
+    .sub{margin:0; color:var(--muted); font-size:14px}
+
+    .tools{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+    .input{
+      padding:12px; border:1px solid var(--line); border-radius:12px; background:#fafafa; font-weight:800; width:100%;
+    }
+    .input:focus{outline:none; border-color:#cdd5e0; background:#fff}
+    .input[dir="ltr"]{direction:ltr}
+    .mini{width:180px}
+    .btn-solid{
+      padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+      background:#fff; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn-solid.primary{background:var(--accent); border-color:var(--accent); color:#111}
+    .btn-solid.danger{background:#fff1f1; border-color:#fecaca; color:#7f1d1d}
+    .btn-solid:disabled{opacity:.55; cursor:not-allowed}
+
+    .stats{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:12px
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px; border:1px solid var(--line);
+      background:#fff; font-weight:900; font-size:12px; color:#111;
+    }
+    .pill .k{color:var(--muted); font-weight:900}
+    .pill .v{font-weight:900}
+    .pill.ok{border-color:#bbf7d0; background:#f0fdf4}
+    .pill.warn{border-color:#fde68a; background:#fffbeb}
+
+    /* قائمة الحسابات */
+    .list{margin-top:14px; display:grid; gap:10px}
+    .item{
+      display:flex; gap:12px; align-items:center; padding:12px;
+      border:1px solid var(--line); border-radius:14px; background:#fff;
+    }
+    .avatar{
+      width:44px;height:44px;border-radius:14px; display:grid; place-items:center;
+      background:#f3f4f6; border:1px solid var(--line); color:#111;
+      font-weight:900;
+    }
+    .meta{flex:1; min-width:220px}
+    .name{font-weight:900}
+    .muted{color:var(--muted); font-weight:800; font-size:13px}
+    .kv{display:flex; gap:10px; flex-wrap:wrap; margin-top:4px}
+    .tag{
+      font-size:12px; font-weight:900; color:#111;
+      border:1px solid var(--line); background:#fafafa;
+      padding:4px 8px; border-radius:999px;
+    }
+    .tag strong{font-weight:900}
+    .actions{display:flex; gap:8px; flex-wrap:wrap}
+    .icon-btn{
+      width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+      background:#fff; cursor:pointer; display:grid; place-items:center;
+    }
+    .icon-btn.edit{border-color:#dbeafe; background:#eff6ff}
+    .icon-btn.del{border-color:#fecaca; background:#fff1f1; color:#7f1d1d}
+    .icon-btn .ms{font-size:20px}
+
+    .empty{
+      text-align:center; color:var(--muted); font-weight:900;
+      padding:16px; border:1px dashed rgba(15,23,42,.18);
+      border-radius:14px; background:#fff;
+      display:none;
+    }
+
+    /* مودال تعديل */
+    .modal{
+      position:fixed; inset:0; background:rgba(2,6,23,.45);
+      display:none; align-items:center; justify-content:center; padding:18px; z-index:50;
+    }
+    .modal.show{display:flex}
+    .panel{
+      width:min(720px, 96vw);
+      background:#fff; border:1px solid var(--line); border-radius:16px;
+      box-shadow:0 18px 48px rgba(0,0,0,.18);
+      overflow:hidden;
+    }
+    .panel-h{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; border-bottom:1px solid var(--line); background:#fff;
+    }
+    .panel-h .t{font-weight:900}
+    .panel-b{padding:14px}
+    .grid{
+      display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0,1fr));
+    }
+    @media (max-width:700px){ .grid{grid-template-columns:1fr} }
+    .field{display:grid; gap:8px}
+    .label{font-weight:900; font-size:13px}
+    .hint{font-size:12px; color:var(--muted); font-weight:800}
+    .input.error{border-color:var(--danger); background:#fff1f1}
+
+    .panel-f{
+      display:flex; gap:10px; flex-wrap:wrap;
+      padding:12px 14px; border-top:1px solid var(--line); background:#fafafa;
+    }
+    .panel-f .left{margin-inline-start:auto; display:flex; gap:10px; flex-wrap:wrap}
+
+    /* توست */
+    .toast{
+      position:fixed; bottom:22px; left:50%; transform:translateX(-50%) scale(.96);
+      background:rgba(17,17,17,.92); color:#fff; padding:8px 12px; border-radius:10px;
+      font-weight:900; font-size:12px; opacity:0; pointer-events:none;
+      transition:opacity .25s, transform .25s; z-index:80;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
+  </style>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
+</head>
+<body>
+
+  <!-- الشريط العلوي -->
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span><span>إدارة الحسابات</span></div>
+    <div class="top-actions">
+      <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
+      <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="row2">
+      <section class="card head">
+        <h1>لوحة إدارة الحسابات</h1>
+        <p class="sub">عرض، بحث، تعديل، حذف — مباشرة من قاعدة البيانات.</p>
+
+        <div class="tools">
+          <input id="q" class="input" type="text" placeholder="ابحث: الاسم / اليوزر / الهاتف / رقم الحساب / UID" />
+          <select id="sort" class="input mini" title="ترتيب">
+            <option value="new">الأحدث</option>
+            <option value="old">الأقدم</option>
+            <option value="name">الاسم</option>
+            <option value="username">اسم المستخدم</option>
+            <option value="accountId">رقم الحساب</option>
+          </select>
+          <button class="btn-solid primary" id="exportBtn" title="نسخ النتائج">
+            <span class="ms">content_copy</span>
+            نسخ النتائج
+          </button>
+        </div>
+
+        <div class="stats">
+          <span class="pill ok"><span class="ms">groups</span><span class="k">الإجمالي:</span> <span class="v" id="total">0</span></span>
+          <span class="pill warn"><span class="ms">filter_alt</span><span class="k">المعروض:</span> <span class="v" id="shown">0</span></span>
+        </div>
+
+        <div id="list" class="list"></div>
+        <div id="empty" class="empty">لا توجد حسابات مطابقة لبحثك.</div>
+      </section>
+
+      <aside class="card side">
+        <h1 style="font-size:18px;margin:0 0 6px">ملاحظات سريعة</h1>
+        <p class="sub" style="margin-bottom:12px">
+          - تعديل <b>اسم المستخدم</b> يقوم بتحديث فهرس <code>usernames/</code> تلقائياً.<br>
+          - حذف الحساب يحذف السجل من <code>users</code> + فهرس <code>usernames</code> إن وجد.
+        </p>
+
+        <button class="btn-solid" id="scrollTopBtn">
+          <span class="ms">arrow_upward</span>
+          أعلى الصفحة
+        </button>
+        <button class="btn-solid danger" id="dangerTipBtn" style="margin-top:10px">
+          <span class="ms">warning</span>
+          تنبيه الأمان
+        </button>
+      </aside>
+    </div>
+  </main>
+
+  <!-- مودال التعديل -->
+  <div class="modal" id="modal">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <div class="panel-h">
+        <div class="t" id="mTitle">تعديل الحساب</div>
+        <button class="btn" id="closeModal" title="إغلاق"><span class="ms">close</span></button>
+      </div>
+
+      <div class="panel-b">
+        <div class="grid">
+          <div class="field">
+            <label class="label">UID</label>
+            <input id="m_uid" class="input" type="text" readonly dir="ltr">
+            <div class="hint">مفتاح السجل داخل users/</div>
+          </div>
+
+          <div class="field">
+            <label class="label">رقم الحساب</label>
+            <input id="m_accountId" class="input" type="text" dir="ltr" placeholder="مثال: 991234567">
+            <div class="hint">يمكنك تغييره — (يفضل أرقام فقط).</div>
+          </div>
+
+          <div class="field">
+            <label class="label">الاسم الكامل</label>
+            <input id="m_name" class="input" type="text" placeholder="اسم المستخدم">
+          </div>
+
+          <div class="field">
+            <label class="label">رقم الهاتف</label>
+            <input id="m_phone" class="input" type="tel" dir="ltr" placeholder="+967 7XXXXXXXX">
+            <div class="hint">يكفي 7 أرقام أو أكثر.</div>
+          </div>
+
+          <div class="field">
+            <label class="label">اسم المستخدم</label>
+            <input id="m_username" class="input" type="text" dir="ltr" placeholder="Username">
+            <div class="hint">عند تغييره سيتم تحديث usernames/ تلقائياً.</div>
+          </div>
+
+          <div class="field">
+            <label class="label">كلمة المرور</label>
+            <input id="m_password" class="input" type="text" dir="ltr" placeholder="••••••••">
+            <div class="hint">مخزنة كنص واضح حسب نظامك الحالي.</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; border-top:1px dashed var(--line); padding-top:12px">
+          <div class="hint">
+            <b>تنبيه:</b> التعديل هنا يغيّر البيانات مباشرة في Firebase Realtime Database.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-f">
+        <button class="btn-solid" id="copyUserBtn">
+          <span class="ms">content_copy</span>
+          نسخ بيانات الحساب
+        </button>
+
+        <div class="left">
+          <button class="btn-solid danger" id="deleteBtn">
+            <span class="ms">delete</span>
+            حذف الحساب
+          </button>
+          <button class="btn-solid primary" id="saveBtn">
+            <span class="ms">save</span>
+            حفظ التعديلات
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module">
+    /* ============ Firebase إعداد ============ */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getDatabase, ref, get, update, remove, set
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr3mtTHa_nJajn9H5N1V5sWNHIHY8RU8g",
+      authDomain: "dynex-f4486.firebaseapp.com",
+      databaseURL: "https://dynex-f4486-default-rtdb.firebaseio.com",
+      projectId: "dynex-f4486",
+      storageBucket: "dynex-f4486.firebasestorage.app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    /* ============ أدوات واجهة ============ */
+    const $ = s => document.querySelector(s);
+    const toastEl = $("#toast");
+    function toast(msg){
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      setTimeout(()=>toastEl.classList.remove("show"), 1600);
+    }
+    function esc(s){
+      return String(s ?? "").replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+    function digitsLen(v){ return String(v||"").replace(/\\D/g,"").length; }
+    function validPhoneLoose(v){ return digitsLen(v) >= 7; }
+    function norm(s){ return String(s??"").trim().toLowerCase(); }
+
+    // مسار الرجوع (لو تبغاه يرجع للوحة الرئيسية)
+    const DASHBOARD = "index.html";
+
+    $("#backBtn").addEventListener("click", ()=>{
+      if(history.length > 1) history.back();
+      else window.location.replace(DASHBOARD);
+    });
+    $("#refreshBtn").addEventListener("click", ()=> loadUsers(true));
+    $("#scrollTopBtn").addEventListener("click", ()=> window.scrollTo({top:0, behavior:"smooth"}));
+    $("#dangerTipBtn").addEventListener("click", ()=>{
+      alert("تنبيه: كلمة المرور مخزنة كنص واضح في قاعدة البيانات حسب النظام الحالي. يفضّل لاحقاً استخدام Firebase Auth أو تشفير/هاش.");
+    });
+
+    /* ============ بيانات الحسابات ============ */
+    let USERS = [];       // array of {uid, ...data}
+    let FILTERED = [];    // visible
+    let CURRENT = null;   // current user in modal
+    let CURRENT_ORIG_USERNAME = ""; // لتحديث فهرس usernames
+
+    function pickCreatedAt(u){
+      // توافق مع serverTimestamp أو حقول مختلفة (قد تكون رقم/كائن)
+      const v = u?.createdAt ?? u?.created_ts ?? u?.createdAtMs ?? u?.time ?? 0;
+      if(typeof v === "number") return v;
+      // أحياناً serverTimestamp قد لا ينعكس في القراءة بشكل رقم مباشر
+      return 0;
+    }
+
+    function avatarLetters(name, username){
+      const n = String(name||"").trim();
+      if(n){
+        const parts = n.split(/\\s+/).filter(Boolean);
+        const a = parts[0]?.[0] ?? "U";
+        const b = parts[1]?.[0] ?? "";
+        return (a + b).toUpperCase();
+      }
+      const u = String(username||"").trim();
+      return (u.slice(0,2) || "U").toUpperCase();
+    }
+
+    function render(){
+      $("#total").textContent = USERS.length.toLocaleString("ar-EG");
+      $("#shown").textContent = FILTERED.length.toLocaleString("ar-EG");
+
+      const list = $("#list");
+      const empty = $("#empty");
+      list.innerHTML = "";
+
+      if(!FILTERED.length){
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+
+      FILTERED.forEach(u=>{
+        const name = u.name ?? u.fullName ?? u.displayName ?? "—";
+        const username = u.username ?? "—";
+        const phone = u.phone ?? "—";
+        const accountId = u.accountId ?? u.accountID ?? u.accId ?? "—";
+
+        const card = document.createElement("div");
+        card.className = "item";
+        card.innerHTML = `
+          <div class="avatar">${esc(avatarLetters(name, username))}</div>
+          <div class="meta">
+            <div class="name">${esc(name)}</div>
+            <div class="muted" dir="ltr">@${esc(username)} · UID: ${esc(u.uid)}</div>
+            <div class="kv">
+              <span class="tag"><strong>الحساب:</strong> <span dir="ltr">${esc(accountId)}</span></span>
+              <span class="tag"><strong>الهاتف:</strong> <span dir="ltr">${esc(phone)}</span></span>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="icon-btn edit" title="تعديل" data-act="edit" data-uid="${esc(u.uid)}"><span class="ms">edit</span></button>
+            <button class="icon-btn del" title="حذف" data-act="del" data-uid="${esc(u.uid)}"><span class="ms">delete</span></button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function applyFilter(){
+      const q = norm($("#q").value);
+      let arr = USERS.slice();
+
+      if(q){
+        arr = arr.filter(u=>{
+          const name = norm(u.name ?? u.fullName ?? u.displayName ?? "");
+          const username = norm(u.username ?? "");
+          const phone = norm(u.phone ?? "");
+          const accountId = norm(u.accountId ?? u.accountID ?? u.accId ?? "");
+          const uid = norm(u.uid ?? "");
+          return (
+            name.includes(q) ||
+            username.includes(q) ||
+            phone.includes(q) ||
+            accountId.includes(q) ||
+            uid.includes(q)
+          );
+        });
+      }
+
+      const sort = $("#sort").value;
+      arr.sort((a,b)=>{
+        if(sort === "name") return norm(a.name).localeCompare(norm(b.name), "ar");
+        if(sort === "username") return norm(a.username).localeCompare(norm(b.username));
+        if(sort === "accountId") return String(a.accountId||"").localeCompare(String(b.accountId||""));
+        const ta = pickCreatedAt(a), tb = pickCreatedAt(b);
+        if(sort === "old") return (ta||0) - (tb||0);
+        return (tb||0) - (ta||0); // new
+      });
+
+      FILTERED = arr;
+      render();
+    }
+
+    async function loadUsers(showToast=false){
+      try{
+        const snap = await get(ref(db, "users"));
+        const obj = snap.exists() ? snap.val() : {};
+        USERS = Object.keys(obj).map(uid => {
+          const u = obj[uid] || {};
+          // توحيد مفاتيح محتملة
+          return {
+            uid,
+            username: u.username ?? u.uname ?? "",
+            name: u.name ?? u.fullName ?? u.displayName ?? "",
+            phone: u.phone ?? "",
+            accountId: u.accountId ?? u.accountID ?? u.accId ?? "",
+            password: u.password ?? "",
+            createdAt: u.createdAt ?? u.created_ts ?? 0,
+            _raw: u
+          };
+        });
+
+        applyFilter();
+        if(showToast) toast("تم التحديث");
+      }catch(e){
+        console.error(e);
+        toast("تعذّر تحميل الحسابات");
+      }
+    }
+
+    /* ============ مودال التعديل ============ */
+    const modal = $("#modal");
+    function openModal(u){
+      CURRENT = u;
+      CURRENT_ORIG_USERNAME = String(u.username || "").trim();
+
+      $("#m_uid").value = u.uid || "";
+      $("#m_accountId").value = u.accountId || "";
+      $("#m_name").value = u.name || "";
+      $("#m_phone").value = u.phone || "";
+      $("#m_username").value = u.username || "";
+      $("#m_password").value = u.password || "";
+
+      // تنظيف أخطاء
+      ["m_accountId","m_name","m_phone","m_username","m_password"].forEach(id=>$("#"+id).classList.remove("error"));
+
+      modal.classList.add("show");
+    }
+    function closeModal(){
+      modal.classList.remove("show");
+      CURRENT = null;
+      CURRENT_ORIG_USERNAME = "";
+    }
+    $("#closeModal").addEventListener("click", closeModal);
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
+
+    $("#copyUserBtn").addEventListener("click", async ()=>{
+      if(!CURRENT) return;
+      const data = {
+        uid: $("#m_uid").value,
+        accountId: $("#m_accountId").value,
+        name: $("#m_name").value,
+        phone: $("#m_phone").value,
+        username: $("#m_username").value,
+        password: $("#m_password").value
+      };
+      const text = JSON.stringify(data, null, 2);
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("تم نسخ البيانات");
+      }catch{
+        toast("تعذّر النسخ");
+      }
+    });
+
+    async function usernameExists(u){
+      const uname = String(u||"").trim();
+      if(!uname) return false;
+      const snap = await get(ref(db, "usernames/" + uname));
+      return snap.exists();
+    }
+
+    async function updateUsernameIndex(oldU, newU, uid){
+      const oldName = String(oldU||"").trim();
+      const newName = String(newU||"").trim();
+      if(oldName === newName) return;
+
+      // إزالة القديم إذا كان يشير لنفس uid (حماية بسيطة)
+      if(oldName){
+        try{
+          const s = await get(ref(db, "usernames/" + oldName));
+          if(s.exists() && String(s.val()) === String(uid)){
+            await remove(ref(db, "usernames/" + oldName));
+          }
+        }catch(_){}
+      }
+      // إضافة الجديد
+      if(newName){
+        await set(ref(db, "usernames/" + newName), String(uid));
+      }
+    }
+
+    $("#saveBtn").addEventListener("click", async ()=>{
+      if(!CURRENT) return;
+
+      const uid = $("#m_uid").value.trim();
+      const accountId = $("#m_accountId").value.trim();
+      const name = $("#m_name").value.trim();
+      const phone = $("#m_phone").value.trim();
+      const username = $("#m_username").value.trim();
+      const password = $("#m_password").value;
+
+      // إزالة أخطاء
+      ["m_accountId","m_name","m_phone","m_username","m_password"].forEach(id=>$("#"+id).classList.remove("error"));
+
+      // تحقق بسيط
+      if(!uid){ toast("UID غير صالح"); return; }
+      if(!name){ $("#m_name").classList.add("error"); return toast("أدخل الاسم"); }
+      if(phone && !validPhoneLoose(phone)){ $("#m_phone").classList.add("error"); return toast("رقم هاتف غير صالح"); }
+      if(username && username.length < 3){ $("#m_username").classList.add("error"); return toast("اسم المستخدم قصير"); }
+
+      const btn = $("#saveBtn");
+      const prev = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="ms">hourglass_top</span> جارٍ الحفظ...`;
+
+      try{
+        // إذا غيّر اسم المستخدم: تأكد أنه غير مستخدم من شخص ثاني
+        const oldU = CURRENT_ORIG_USERNAME;
+        if(username && username !== oldU){
+          const exists = await usernameExists(username);
+          if(exists){
+            // قد يكون لنفس المستخدم؟ نفحص القيمة
+            const s = await get(ref(db, "usernames/" + username));
+            const owner = s.exists() ? String(s.val()) : "";
+            if(owner && owner !== String(uid)){
+              $("#m_username").classList.add("error");
+              throw new Error("اسم المستخدم مستخدم مسبقاً");
+            }
+          }
+        }
+
+        // تحديث سجل المستخدم
+        const patch = {
+          name,
+          phone,
+          username,
+          password,
+          accountId
+        };
+        await update(ref(db, "users/" + uid), patch);
+
+        // تحديث فهرس usernames
+        await updateUsernameIndex(oldU, username, uid);
+
+        toast("تم حفظ التعديلات");
+        closeModal();
+        await loadUsers(false);
+      }catch(e){
+        console.error(e);
+        toast(e?.message?.includes("مستخدم") ? e.message : "تعذّر الحفظ");
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = prev;
+      }
+    });
+
+    $("#deleteBtn").addEventListener("click", async ()=>{
+      if(!CURRENT) return;
+
+      const uid = $("#m_uid").value.trim();
+      const username = $("#m_username").value.trim();
+      const name = $("#m_name").value.trim() || "—";
+
+      const ok = confirm(`تأكيد حذف الحساب؟\n\nالاسم: ${name}\nUID: ${uid}\n\nهذا الإجراء لا يمكن التراجع عنه.`);
+      if(!ok) return;
+
+      const btn = $("#deleteBtn");
+      const prev = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="ms">delete_forever</span> جارٍ الحذف...`;
+
+      try{
+        // حذف المستخدم
+        await remove(ref(db, "users/" + uid));
+
+        // حذف فهرس اسم المستخدم إذا كان يشير لنفس uid
+        if(username){
+          try{
+            const s = await get(ref(db, "usernames/" + username));
+            if(s.exists() && String(s.val()) === String(uid)){
+              await remove(ref(db, "usernames/" + username));
+            }
+          }catch(_){}
+        }
+
+        toast("تم حذف الحساب");
+        closeModal();
+        await loadUsers(false);
+      }catch(e){
+        console.error(e);
+        toast("تعذّر الحذف");
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = prev;
+      }
+    });
+
+    /* ============ أحداث القائمة ============ */
+    $("#list").addEventListener("click", (e)=>{
+      const b = e.target.closest("[data-act]");
+      if(!b) return;
+      const uid = b.getAttribute("data-uid");
+      const u = USERS.find(x => x.uid === uid);
+      if(!u) return;
+
+      const act = b.getAttribute("data-act");
+      if(act === "edit"){
+        openModal(u);
+      }else if(act === "del"){
+        // فتح مودال ثم حذف (حتى تشوف البيانات)
+        openModal(u);
+        setTimeout(()=>$("#deleteBtn").focus(), 50);
+      }
+    });
+
+    $("#q").addEventListener("input", applyFilter);
+    $("#sort").addEventListener("change", applyFilter);
+
+    /* نسخ النتائج المعروضة */
+    $("#exportBtn").addEventListener("click", async ()=>{
+      const rows = FILTERED.map(u => ({
+        uid: u.uid,
+        accountId: u.accountId || "",
+        username: u.username || "",
+        name: u.name || "",
+        phone: u.phone || ""
+      }));
+      const text = JSON.stringify(rows, null, 2);
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("تم نسخ النتائج");
+      }catch{
+        toast("تعذّر النسخ");
+      }
+    });
+
+    /* تشغيل أول */
+    loadUsers(false);
+  </script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(reg => console.log("✔ Service Worker registered"))
+        .catch(err => console.error("❌ Service Worker failed:", err));
+    }
+  </script>
+
+</body>
+</html>

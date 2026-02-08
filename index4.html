@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>إيداع من حساب إلى حساب (لوحة الشركة)</title>
+  <title>التحويلات بين الحسابات (مع التعديل والحذف)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0,0" rel="stylesheet">
@@ -11,7 +11,7 @@
   <style>
     :root{
       --accent:#BBCF38; --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb;
-      --bg:#f7f8fa; --card:#fff; --top:56px;
+      --bg:#f7f8fa; --card:#fff; --top:56px; --edit:#3b82f6; --delete:#ef4444;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:"Cairo",system-ui,Segoe UI,Roboto,Arial;color:var(--ink);background:var(--bg)}
@@ -42,15 +42,64 @@
       display:flex; align-items:center; gap:10px; padding:10px 12px;
       border:1px solid var(--line); border-radius:12px; background:#fff;
       font-weight:700; font-size:14px; flex-wrap:wrap;
+      position:relative;
     }
+    .row.locked{background:#fef2f2; border-color:#fecaca;}
+    .row.edited{background:#f0f9ff; border-color:#bae6fd;}
     .main{display:flex; gap:8px; align-items:center; min-width:280px; flex:1 1 520px; overflow:hidden; white-space:nowrap}
     .who{display:flex; align-items:center; gap:8px; overflow:hidden}
     .name{max-width:20ch; overflow:hidden; text-overflow:ellipsis}
-    .id{color:var(--muted)}
+    .id{color:var(--muted); font-size:12px}
     .arrow{display:inline-flex; align-items:center; gap:4px; color:#334155}
     .amt{font-weight:900}
-    .time{color:var(--muted); font-weight:700}
+    .time{color:var(--muted); font-weight:700; font-size:12px}
     .sep{opacity:.5}
+    .status-badge{
+      padding:4px 8px; border-radius:999px; font-weight:900; font-size:11px;
+    }
+    .status-active{background:#dcfce7; color:#166534;}
+    .status-edited{background:#dbeafe; color:#1e40af;}
+    .status-locked{background:#fee2e2; color:#991b1b;}
+
+    /* الأزرار */
+    .actions{display:flex; gap:8px}
+    .chip{padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; font-weight:800; cursor:pointer; font-size:12px}
+    .edit{background:var(--edit); color:#fff; border-color:var(--edit)}
+    .delete{background:var(--delete); color:#fff; border-color:var(--delete)}
+    .chip[disabled]{opacity:.4; cursor:not-allowed; pointer-events:none}
+
+    /* Modal التعديل */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      opacity:0; visibility:hidden; transition:.25s; z-index:100;
+    }
+    .modal{
+      position:fixed; left:50%; top:50%;
+      transform:translate(-50%,-50%) scale(.94);
+      opacity:0; visibility:hidden; transition:opacity .25s, transform .25s, visibility 0s .25s;
+      width:min(92vw,420px); background:#fff; border-radius:18px;
+      border:1px solid #eee; box-shadow:0 20px 60px rgba(0,0,0,.25);
+      z-index:101; padding:18px 16px;
+    }
+    .modal.show{ opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); transition-delay:0s; }
+    .modal-backdrop.show{ opacity:1; visibility:visible; }
+    .modal-title{font-weight:900; font-size:18px; margin-bottom:14px; text-align:center}
+    .modal-field{margin-bottom:12px}
+    .modal-label{display:block; margin-bottom:6px; font-weight:700; color:#4b5563}
+    .modal-input{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+      background:#f9fafb; font-family:inherit; font-size:14px
+    }
+    .modal-actions{display:flex; gap:10px; margin-top:16px}
+    .modal-btn{
+      flex:1; padding:10px; border-radius:10px; border:1px solid var(--line);
+      background:#fff; font-weight:800; cursor:pointer
+    }
+    .modal-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+    .modal-close{
+      position:absolute; inset-inline-end:12px; top:12px; width:34px; height:34px; border-radius:50%;
+      border:1px solid #e5e7eb; background:#fff; cursor:pointer; font-weight:900; font-size:14px
+    }
 
     .empty{padding:14px; text-align:center; color:var(--muted); border:1px dashed var(--line); border-radius:10px}
     .toast{
@@ -60,16 +109,15 @@
     }
     .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
   </style>
-  
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#BBCF38">
-  
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
 </head>
 <body>
 
   <!-- الشريط العلوي -->
   <header class="topbar">
-    <div class="brand"><span class="dot"></span><span>نظام الشركة</span></div>
+    <div class="brand"><span class="dot"></span><span>التحويلات بين الحسابات</span></div>
     <div style="display:flex; gap:8px; align-items:center">
       <button class="btn" id="refreshBtn" title="تحديث"><span class="ms">refresh</span></button>
       <button class="btn" id="backBtn" title="رجوع"><span class="ms">arrow_back_ios_new</span></button>
@@ -85,13 +133,40 @@
       </div>
 
       <div id="list" class="list"></div>
-      <div id="empty" class="empty" style="display:none">لا توجد عمليات إيداع بين الحسابات.</div>
+      <div id="empty" class="empty" style="display:none">لا توجد عمليات تحويل بين الحسابات.</div>
     </section>
   </main>
 
+  <!-- Modal تعديل المبلغ -->
+  <div id="editModalBack" class="modal-backdrop"></div>
+  <div id="editModal" class="modal" role="dialog" aria-modal="true">
+    <button id="editClose" class="modal-close">✕</button>
+    <div class="modal-title">تعديل مبلغ التحويل</div>
+
+    <div class="modal-field">
+      <label class="modal-label">المبلغ الحالي</label>
+      <input id="currentAmount" class="modal-input" readonly>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">المبلغ الجديد</label>
+      <input id="newAmount" class="modal-input" type="number" min="1" step="0.01" placeholder="أدخل المبلغ الجديد">
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">سبب التعديل (اختياري)</label>
+      <input id="editReason" class="modal-input" type="text" placeholder="سبب التعديل">
+    </div>
+
+    <div class="modal-actions">
+      <button id="editCancel" class="modal-btn">إلغاء</button>
+      <button id="editSave" class="modal-btn primary">حفظ التعديل</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
-  <!-- ✅ Firebase (Compat) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
@@ -101,7 +176,7 @@
 
     /* ===== عودة وتحديث ===== */
     $("#backBtn").addEventListener('click', ()=>{ if(history.length>1) history.back(); else window.location.replace('/admin/core/dashboard.html'); });
-    function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200); }
+    function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1400); }
     function setLive(ok){
       const live = $("#live");
       live.className = "pill " + (ok ? "live-ok" : "live-bad");
@@ -120,155 +195,539 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    /* ===== كاش أسماء وأرقام الحساب ===== */
-    const userCache = new Map(); // uid -> {name, accountId}
+    /* ===== أدوات مهمّة (حل مشكلة string/number + أرقام عربية) ===== */
+    function normalizeAccountId(v){
+      if(!v) return '';
+      const map = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+                   '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+      v = String(v).trim().replace(/[٠-٩۰-۹]/g, d=>map[d]).replace(/[^\d]/g,'');
+      return v;
+    }
+
+    /* ===== متغيرات عامة ===== */
+    const userCache = new Map();          // uid -> {name, accountId, balance}
+    let lastRows = [];
+    let currentEditRow = null;
+    let lockedUsersCache = new Map();     // uid -> boolean
+
+    /* ===== دالات مساعدة ===== */
     async function getProfile(uid){
-      if(!uid) return {name:'—', accountId:'—'};
+      if(!uid) return {name:'—', accountId:'—', balance:0};
       if(userCache.has(uid)) return userCache.get(uid);
       try{
         const snap = await db.ref('users/'+uid).get();
         const v = snap.val()||{};
-        const prof = { name: v.name || v.username || '—', accountId: v.accountId || v.id || '—' };
+        const prof = {
+          name: v.name || v.username || '—',
+          accountId: v.accountId || v.id || '—',
+          balance: Number(v.balance || 0)
+        };
         userCache.set(uid, prof);
         return prof;
-      }catch(_){ return {name:'—', accountId:'—'}; }
+      }catch(_){
+        return {name:'—', accountId:'—', balance:0};
+      }
+    }
+
+    async function findUidByAccountId(accountId){
+      const norm = normalizeAccountId(accountId);
+      if(!norm) return null;
+
+      // كاش سريع (بعد التطبيع)
+      for(const [uid, profile] of userCache.entries()){
+        const p = normalizeAccountId(profile.accountId);
+        if(p && p === norm) return uid;
+      }
+
+      // 1) كـ string
+      try{
+        const s1 = await db.ref('users').orderByChild('accountId').equalTo(norm).limitToFirst(1).get();
+        if(s1.exists()){
+          const o = s1.val();
+          return Object.keys(o)[0] || null;
+        }
+      }catch(e){ console.error("findUid string error:", e); }
+
+      // 2) كـ number
+      const n = Number(norm);
+      if(!Number.isNaN(n)){
+        try{
+          const s2 = await db.ref('users').orderByChild('accountId').equalTo(n).limitToFirst(1).get();
+          if(s2.exists()){
+            const o2 = s2.val();
+            return Object.keys(o2)[0] || null;
+          }
+        }catch(e){ console.error("findUid number error:", e); }
+      }
+
+      // 3) fallback scan
+      try{
+        const all = await db.ref('users').get();
+        if(all.exists()){
+          let found = null;
+          all.forEach(ch=>{
+            const v = ch.val()||{};
+            const aId = normalizeAccountId(v.accountId);
+            if(aId && aId === norm) found = ch.key;
+          });
+          return found;
+        }
+      }catch(e){ console.error("findUid scan error:", e); }
+
+      return null;
+    }
+
+    /* ===== دالة التحقق من حالة القفل للمستخدم ===== */
+    async function checkUserLocked(uid){
+      if(!uid) return false;
+      if(lockedUsersCache.has(uid)) return lockedUsersCache.get(uid);
+
+      try{
+        const tradingRef = db.ref('trading');
+        const investmentsRef = db.ref('investments');
+
+        const [tradingSnap, investmentsSnap] = await Promise.all([
+          tradingRef.orderByChild('userId').equalTo(uid).limitToFirst(1).get(),
+          investmentsRef.orderByChild('userId').equalTo(uid).limitToFirst(1).get()
+        ]);
+
+        const hasTrading = tradingSnap.exists();
+        const hasInvestments = investmentsSnap.exists();
+
+        const withdrawalsRef = db.ref('withdrawals/' + uid);
+        const withdrawalsSnap = await withdrawalsRef.get();
+        let hasActiveWithdrawal = false;
+
+        if(withdrawalsSnap.exists()){
+          withdrawalsSnap.forEach(child => {
+            if(child.key !== 'current') {
+              const data = child.val();
+              if(data && (data.status === 'pending' || data.status === 'processing')) {
+                hasActiveWithdrawal = true;
+              }
+            }
+          });
+        }
+
+        const lockedBalanceRef = db.ref('balance_to_locked');
+        const lockedSnap = await lockedBalanceRef.orderByChild('userId').equalTo(uid).limitToFirst(1).get();
+        const hasLockedBalance = lockedSnap.exists();
+
+        const isLocked = !!(hasTrading || hasInvestments || hasActiveWithdrawal || hasLockedBalance);
+        lockedUsersCache.set(uid, isLocked);
+        return isLocked;
+      }catch(e){
+        console.error("Error checking user lock:", e);
+        lockedUsersCache.set(uid, false);
+        return false;
+      }
     }
 
     /* ===== تحويل شكل السجل ===== */
-    function normalize(raw, key, parentUid){
-      // مرونة بأسماء الحقول
-      const fromUid = raw.fromUid || raw.from_uid || raw.senderUid || raw.sender_uid || raw.sender_id || parentUid || null;
-      const toUid   = raw.toUid   || raw.to_uid   || raw.receiverUid || raw.receiver_uid || raw.receiver_id || null;
-
-      const fromId  = raw.fromId || raw.from_id || raw.fromAccountId || raw.sender_account || raw.sender_acc || null;
-      const toId    = raw.toId   || raw.to_id   || raw.toAccountId   || raw.receiver_account || raw.receiver_acc || null;
-
-      const fromName= raw.fromName || raw.from_name || raw.sender_name || raw.username_from || null;
-      const toName  = raw.toName   || raw.to_name   || raw.receiver_name || raw.username_to || null;
-
-      const amount  = Number(raw.amount ?? raw.amt ?? 0);
-      const ts      = raw.createdAt || raw.created_at || raw.timestamp || null;
+    function normalize(raw, key){
+      const fromAccount = raw.from || raw.fromId || raw.fromAccountId || '—';
+      const toAccount = raw.to || raw.toId || raw.toAccountId || '—';
+      const fromName = raw.fromName || '—';
+      const toName = raw.toName || '—';
+      const amount = Number(raw.amount ?? raw.amt ?? 0);
+      const originalAmount = Number(raw.originalAmount || amount);
+      const ts = raw.ts || raw.createdAt || raw.timestamp || Date.now();
+      const type = raw.type || 'deposit_to_account';
+      const edited = raw.edited || false;
+      const editHistory = raw.editHistory || [];
+      const status = raw.status || 'active';
 
       return {
-        id: key || raw.id || raw.ref || '',
-        fromUid, toUid,
-        fromId, toId,
-        fromName, toName,
-        amt: amount,
-        tsISO: ts ? new Date(ts).toISOString() : '',
-        tsLocal: ts ? new Date(ts).toLocaleString() : ''
+        id: key,
+        fromAccount,
+        toAccount,
+        fromName,
+        toName,
+        amount,
+        originalAmount,
+        tsISO: new Date(ts).toISOString(),
+        tsLocal: new Date(ts).toLocaleString(),
+        type,
+        edited,
+        editHistory,
+        status,
+        fromUid: null,
+        toUid: null
       };
     }
 
-    /* ===== قراءة من المسار (مرن لمستويين) =====
-       يدعم:
-       1) accountDeposits/{depositId} -> record
-       2) accountDeposits/{uid}/{depositId} -> record
-    */
-    const listRef = db.ref('accountDeposits');
-    let lastRows = [];
+    /* ===== قراءة البيانات ===== */
+    const listRef = db.ref('transfers');
 
-    function collectFromSnapshot(snap){
-      const rows = [];
-      snap.forEach(l1=>{
-        const v1 = l1.val();
-        const looksLikeRecord = v1 && (v1.amount!=null || v1.fromId || v1.toId || v1.from_uid || v1.to_uid);
-        if(looksLikeRecord){
-          rows.push( normalize(v1, l1.key, null) );
-        }else{
-          l1.forEach(l2=>{
-            rows.push( normalize(l2.val()||{}, l2.key, l1.key) );
-          });
+    async function enrichRows(rows){
+      // تنظيف كاش القفل أحيانًا لتجنب بقاء حالة قديمة
+      // (اختياري: لو تبغاه ثابت احذف السطر التالي)
+      // lockedUsersCache = new Map();
+
+      for(const row of rows){
+        try{
+          if(row.fromAccount && row.fromAccount !== '—'){
+            const fromUid = await findUidByAccountId(row.fromAccount);
+            if(fromUid){
+              row.fromUid = fromUid;
+              const fromProfile = await getProfile(fromUid);
+              row.fromName = fromProfile.name;
+              row.fromBalance = fromProfile.balance;
+            }
+          }
+
+          if(row.toAccount && row.toAccount !== '—'){
+            const toUid = await findUidByAccountId(row.toAccount);
+            if(toUid){
+              row.toUid = toUid;
+              const toProfile = await getProfile(toUid);
+              row.toName = toProfile.name;
+              row.toBalance = toProfile.balance;
+            }
+          }
+        }catch(e){
+          console.error("Error enriching row:", e);
         }
-      });
+      }
       return rows;
     }
 
-    async function enrichRows(rows){
-      const needFrom = rows.filter(r => (!r.fromName || !r.fromId) && r.fromUid).map(r=>r.fromUid);
-      const needTo   = rows.filter(r => (!r.toName   || !r.toId)   && r.toUid).map(r=>r.toUid);
-      const need = Array.from(new Set([...needFrom, ...needTo].filter(Boolean)));
-      await Promise.all( need.map(uid=>getProfile(uid)) );
-      // أعِد ملء البيانات الناقصة من الكاش
-      return rows.map(r=>{
-        if((!r.fromName || !r.fromId) && r.fromUid){
-          const p = userCache.get(r.fromUid) || {};
-          r.fromName = r.fromName || p.name || '—';
-          r.fromId   = r.fromId   || p.accountId || '—';
-        }
-        if((!r.toName || !r.toId) && r.toUid){
-          const p = userCache.get(r.toUid) || {};
-          r.toName = r.toName || p.name || '—';
-          r.toId   = r.toId   || p.accountId || '—';
-        }
-        return r;
-      });
-    }
-
+    /* ===== التنسيق والعرض ===== */
     function fmtAmt(n){ return Number(n||0).toFixed(2); }
 
-    function rowEl(x){
+    async function rowEl(x){
       const d = document.createElement('div');
-      d.className = 'row';
+
+      // التحقق من حالة القفل للمستقبل
+      let isLocked = false;
+      let lockReason = '';
+      if(x.toUid){
+        isLocked = await checkUserLocked(x.toUid);
+        if(isLocked) lockReason = 'المستخدم بدأ التداول/الاستثمار';
+      }
+
+      const statusText = x.edited ? 'تم التعديل' : (isLocked ? 'مقفل' : 'نشط');
+      const statusClass = x.edited ? 'status-edited' : (isLocked ? 'status-locked' : 'status-active');
+
+      // ✅ مهم: لا تمسح locked بعد إضافته
+      d.className = 'row ' + (x.edited ? 'edited' : '') + (isLocked ? ' locked' : '');
+
       d.innerHTML = `
         <div class="main">
           <span class="who">
-            <span class="name" title="${x.fromName||'—'}">${x.fromName||'—'}</span>
-            <span class="id"   title="${x.fromId  ||'—'}">(${x.fromId||'—'})</span>
+            <span class="name" title="${x.fromName}">${x.fromName}</span>
+            <span class="id" title="${x.fromAccount}">(${x.fromAccount})</span>
           </span>
           <span class="arrow"><span class="ms">arrow_back</span> إلى</span>
           <span class="who">
-            <span class="name" title="${x.toName||'—'}">${x.toName||'—'}</span>
-            <span class="id"   title="${x.toId  ||'—'}">(${x.toId||'—'})</span>
+            <span class="name" title="${x.toName}">${x.toName}</span>
+            <span class="id" title="${x.toAccount}">(${x.toAccount})</span>
           </span>
           <span class="sep">·</span>
-          <span class="amt">${fmtAmt(x.amt)}</span>
+          <span class="amt">${fmtAmt(x.amount)}</span>
+          ${x.edited ? `<span class="sep">·</span><span class="amt" style="text-decoration:line-through;color:#9ca3af">${fmtAmt(x.originalAmount)}</span>` : ''}
           <span class="sep">·</span>
-          <span class="time">${x.tsLocal || '-'}</span>
+          <span class="time">${x.tsLocal}</span>
+          <span class="sep">·</span>
+          <span class="status-badge ${statusClass}">${statusText}</span>
+          ${isLocked ? `<span class="sep">·</span><span class="time" style="color:#dc2626">${lockReason}</span>` : ''}
+        </div>
+
+        <div class="actions">
+          <button class="chip edit" data-action="edit" ${isLocked ? 'disabled' : ''}>تعديل المبلغ</button>
+          <button class="chip delete" data-action="delete">حذف</button>
         </div>
       `;
+
+      const editBtn = d.querySelector('[data-action="edit"]');
+      const deleteBtn = d.querySelector('[data-action="delete"]');
+
+      if(editBtn && !isLocked){
+        editBtn.addEventListener('click', () => openEditModal(x));
+      }
+      if(deleteBtn){
+        deleteBtn.addEventListener('click', () => deleteTransfer(x, isLocked));
+      }
+
       return d;
     }
 
-    function render(rows){
-      const cont = $("#list"), empty=$("#empty");
-      cont.innerHTML = '';
-      rows.sort((a,b)=> (b.tsISO||'').localeCompare(a.tsISO||''));
-      if(!rows.length){ empty.style.display='block'; return; }
-      empty.style.display='none';
-      rows.forEach(x=> cont.appendChild(rowEl(x)));
+    /* ===== Modal التعديل ===== */
+    function openEditModal(row){
+      currentEditRow = row;
+      $("#currentAmount").value = fmtAmt(row.amount);
+      $("#newAmount").value = '';
+      $("#editReason").value = '';
+
+      $("#editModalBack").classList.add('show');
+      $("#editModal").classList.add('show');
     }
 
+    function closeEditModal(){
+      $("#editModalBack").classList.remove('show');
+      $("#editModal").classList.remove('show');
+      currentEditRow = null;
+    }
+
+    $("#editClose").addEventListener('click', closeEditModal);
+    $("#editModalBack").addEventListener('click', closeEditModal);
+    $("#editCancel").addEventListener('click', closeEditModal);
+
+    /* ===== تحديث الأرصدة بشكل صحيح + منع السالب ===== */
+    async function updateUserBalances(row, newAmount){
+      const oldAmount = Number(row.amount || 0);
+      const newAmt = Number(newAmount || 0);
+      const diff = +(newAmt - oldAmount).toFixed(2);
+      if(diff === 0) return;
+
+      if(!row.fromUid || !row.toUid){
+        throw new Error('تعذر تحديد UID للمرسل/المستقبل');
+      }
+
+      const fromRef = db.ref('users/' + row.fromUid);
+      const toRef   = db.ref('users/' + row.toUid);
+
+      const [fromSnap, toSnap] = await Promise.all([fromRef.get(), toRef.get()]);
+      const fromBal = Number((fromSnap.val()||{}).balance || 0);
+      const toBal   = Number((toSnap.val()||{}).balance   || 0);
+
+      // إذا زاد المبلغ: خصم الفرق من المرسل + إضافة للمستقبل
+      if(diff > 0){
+        if(fromBal < diff) throw new Error('لا يمكن التعديل: رصيد المرسل لا يكفي فرق الزيادة');
+        const updates = {};
+        updates['/users/' + row.fromUid + '/balance'] = +(fromBal - diff).toFixed(2);
+        updates['/users/' + row.toUid   + '/balance'] = +(toBal   + diff).toFixed(2);
+        await db.ref().update(updates);
+        return;
+      }
+
+      // إذا نقص المبلغ: إرجاع الفرق للمرسل + خصمه من المستقبل
+      const back = Math.abs(diff);
+      if(toBal < back) throw new Error('لا يمكن التعديل: رصيد المستقبل لا يكفي لإرجاع الفرق');
+      const updates = {};
+      updates['/users/' + row.fromUid + '/balance'] = +(fromBal + back).toFixed(2);
+      updates['/users/' + row.toUid   + '/balance'] = +(toBal   - back).toFixed(2);
+      await db.ref().update(updates);
+    }
+
+    $("#editSave").addEventListener('click', async () => {
+      if(!currentEditRow) return;
+
+      const newAmount = parseFloat($("#newAmount").value);
+      const reason = $("#editReason").value.trim();
+
+      if(!newAmount || newAmount <= 0){
+        toast('أدخل مبلغاً صحيحاً');
+        return;
+      }
+      if(newAmount === currentEditRow.amount){
+        toast('المبلغ الجديد مطابق للقديم');
+        return;
+      }
+
+      // منع التعديل إذا مقفل
+      if(currentEditRow.toUid){
+        const isLocked = await checkUserLocked(currentEditRow.toUid);
+        if(isLocked){
+          toast('لا يمكن التعديل - المستخدم بدأ التداول أو الاستثمار');
+          closeEditModal();
+          return;
+        }
+      }
+
+      try{
+        // لو UID ناقص، حاول نعيد استخراجها الآن
+        if(!currentEditRow.fromUid && currentEditRow.fromAccount && currentEditRow.fromAccount!=='—'){
+          currentEditRow.fromUid = await findUidByAccountId(currentEditRow.fromAccount);
+        }
+        if(!currentEditRow.toUid && currentEditRow.toAccount && currentEditRow.toAccount!=='—'){
+          currentEditRow.toUid = await findUidByAccountId(currentEditRow.toAccount);
+        }
+        if(!currentEditRow.fromUid || !currentEditRow.toUid){
+          toast('تعذّر تحديد حسابات العملية (UID)');
+          return;
+        }
+
+        const transferRef = db.ref('transfers/' + currentEditRow.id);
+        const now = Date.now();
+
+        // احصل على سجل التعديلات الحالي
+        const snap = await transferRef.get();
+        const currentData = snap.val() || {};
+        const currentEditHistory = currentData.editHistory || [];
+
+        // ✅ قبل تحديث سجل التحويل: حدّث الأرصدة مع منع السالب
+        await updateUserBalances(currentEditRow, newAmount);
+
+        // تحديث بيانات التحويل
+        const updates = {
+          amount: newAmount,
+          edited: true,
+          editedAt: now,
+          editedBy: 'admin',
+          editReason: reason || 'تعديل من الأدمن'
+        };
+
+        // أضف سجل التعديل
+        const editRecord = {
+          previousAmount: Number(currentEditRow.amount||0),
+          newAmount: Number(newAmount||0),
+          timestamp: now,
+          reason: reason || 'تعديل من الأدمن',
+          by: 'admin'
+        };
+
+        currentEditHistory.push(editRecord);
+        updates.editHistory = currentEditHistory;
+
+        // احتفظ بالمبلغ الأصلي إذا كان هذا أول تعديل
+        if(!currentData.originalAmount){
+          updates.originalAmount = Number(currentEditRow.amount||0);
+        }
+
+        await transferRef.update(updates);
+
+        toast('تم تعديل المبلغ بنجاح');
+        closeEditModal();
+
+        // إعادة تحميل
+        $("#refreshBtn").click();
+      }catch(e){
+        console.error("Error updating transfer:", e);
+        toast(e?.message || 'فشل التعديل');
+      }
+    });
+
+    /* ===== حذف التحويل + منع السالب ===== */
+    async function deleteTransfer(row, isLocked){
+      if(isLocked){
+        toast('لا يمكن الحذف - المستخدم بدأ التداول أو الاستثمار');
+        return;
+      }
+
+      // لو UID ناقص، حاول نعيد استخراجها الآن
+      if(!row.fromUid && row.fromAccount && row.fromAccount!=='—'){
+        row.fromUid = await findUidByAccountId(row.fromAccount);
+      }
+      if(!row.toUid && row.toAccount && row.toAccount!=='—'){
+        row.toUid = await findUidByAccountId(row.toAccount);
+      }
+
+      if(!row.fromUid || !row.toUid){
+        toast('تعذر تحديد UID للمرسل/المستقبل');
+        return;
+      }
+
+      const confirmMsg = `هل تريد حذف تحويل ${fmtAmt(row.amount)} من ${row.fromName} إلى ${row.toName}؟\n\nسيتم إرجاع المبلغ للمرسل.`;
+      if(!confirm(confirmMsg)) return;
+
+      try{
+        // تحقق القفل مرة ثانية
+        const recheckLocked = await checkUserLocked(row.toUid);
+        if(recheckLocked){
+          toast('لا يمكن الحذف - المستخدم بدأ التداول أو الاستثمار');
+          return;
+        }
+
+        const amt = Number(row.amount || 0);
+
+        const fromRef = db.ref('users/' + row.fromUid);
+        const toRef   = db.ref('users/' + row.toUid);
+
+        const [fromSnap, toSnap] = await Promise.all([fromRef.get(), toRef.get()]);
+        const fromBal = Number((fromSnap.val()||{}).balance || 0);
+        const toBal   = Number((toSnap.val()||{}).balance   || 0);
+
+        // ✅ لازم المستقبل معه المبلغ عشان نرجعه
+        if(toBal < amt){
+          toast('لا يمكن الحذف: رصيد المستقبل غير كافٍ لإرجاع المبلغ');
+          return;
+        }
+
+        // ✅ تحديث متعدد المواقع (ذمّة واحدة) + حذف السجل
+        const updates = {};
+        updates['/users/' + row.fromUid + '/balance'] = +(fromBal + amt).toFixed(2);
+        updates['/users/' + row.toUid   + '/balance'] = +(toBal   - amt).toFixed(2);
+        updates['/transfers/' + row.id] = null;
+
+        await db.ref().update(updates);
+
+        toast('تم حذف التحويل وإرجاع المبلغ بنجاح');
+        $("#refreshBtn").click();
+      }catch(e){
+        console.error("Error deleting transfer:", e);
+        toast(e?.message || 'فشل الحذف');
+      }
+    }
+
+    /* ===== العرض ===== */
+    async function render(rows){
+      const cont = $("#list"), empty=$("#empty");
+      cont.innerHTML = '';
+
+      rows.sort((a,b)=> b.tsISO.localeCompare(a.tsISO));
+
+      if(!rows.length){
+        empty.style.display='block';
+        return;
+      }
+
+      empty.style.display='none';
+
+      for(const row of rows){
+        const rowElement = await rowEl(row);
+        cont.appendChild(rowElement);
+      }
+    }
+
+    /* ===== التحديث ===== */
     async function refreshFromLast(){
-      render(lastRows);
-      toast('تم التحديث');
+      try{
+        const rows = await enrichRows(lastRows);
+        await render(rows);
+        toast('تم التحديث');
+      }catch(e){
+        console.error(e);
+        toast('تعذر تحديث البيانات');
+      }
     }
     $("#refreshBtn").addEventListener('click', refreshFromLast);
 
-    // مستمع لحظي
+    /* ===== المستمع اللحظي ===== */
     setLive(true);
     listRef.on('value', async (snap)=>{
       try{
-        const rawRows = collectFromSnapshot(snap);
-        const rows    = await enrichRows(rawRows);
-        lastRows = rows;
-        render(rows);
+        const rows = [];
+        snap.forEach(child=>{
+          const raw = child.val();
+          const key = child.key;
+
+          if(raw && (raw.amount || raw.from || raw.to)){
+            rows.push(normalize(raw, key));
+          }
+        });
+
+        const enrichedRows = await enrichRows(rows);
+        lastRows = enrichedRows;
+        await render(enrichedRows);
         setLive(true);
       }catch(e){
-        console.error(e); setLive(false); toast('تعذّر الاتصال');
+        console.error("Error fetching transfers:", e);
+        setLive(false);
+        toast('تعذّر الاتصال بقاعدة البيانات');
       }
     }, _=> setLive(false));
 
   })();
   </script>
-  
+
   <script>
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("service-worker.js")
       .then(reg => console.log("✔ Service Worker registered"))
       .catch(err => console.error("❌ Service Worker failed:", err));
   }
-</script>
-  
+  </script>
+
 </body>
 </html>

@@ -408,128 +408,11 @@
       border:1px solid rgba(15,23,42,.10);
       background:rgba(255,255,255,.8);
       cursor:pointer; font-weight:900;
-      display:inline-flex; align-items:center; gap:8px;
     }
     html[data-theme="dark"] .theme-btn{
       border:1px solid rgba(255,255,255,.10);
       background:rgba(255,255,255,.06);
       color:var(--ink);
-    }
-
-    /* ==============================
-       ✅ إضافات: مودال إنشاء حساب + مودال صلاحيات
-       ============================== */
-    .admin-modal{
-      position:fixed; inset:0; z-index:95;
-      display:none; align-items:center; justify-content:center;
-      background:rgba(2,6,23,.35);
-      padding:16px;
-    }
-    .admin-modal.show{display:flex}
-    .admin-panel{
-      width:min(520px, 96vw);
-      background:var(--card);
-      border:1px solid rgba(15,23,42,.10);
-      border-radius:18px;
-      box-shadow:0 22px 60px rgba(2,6,23,.22);
-      overflow:hidden;
-    }
-    html[data-theme="dark"] .admin-panel{
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow:0 22px 60px rgba(0,0,0,.55);
-    }
-    .admin-head{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:12px 14px;
-      border-bottom:1px solid var(--line);
-    }
-    .admin-head .t{font-weight:900}
-    .admin-body{padding:14px; display:grid; gap:10px}
-    .frow{display:grid; gap:6px}
-    .frow label{font-weight:900; color:var(--muted); font-size:12px}
-    .frow input, .frow select{
-      width:100%;
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.85);
-      outline:none;
-      font-weight:900;
-      color:var(--ink);
-    }
-    html[data-theme="dark"] .frow input, html[data-theme="dark"] .frow select{
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.06);
-      color:var(--ink);
-    }
-    .admin-actions{
-      padding:12px 14px;
-      border-top:1px solid var(--line);
-      display:flex; gap:10px; flex-wrap:wrap;
-      background:rgba(255,255,255,.55);
-    }
-    html[data-theme="dark"] .admin-actions{background:rgba(255,255,255,.03)}
-    .a-btn{
-      padding:10px 14px;
-      border-radius:12px;
-      border:1px solid rgba(15,23,42,.10);
-      background:rgba(255,255,255,.85);
-      cursor:pointer;
-      font-weight:900;
-      display:inline-flex; align-items:center; gap:8px;
-    }
-    html[data-theme="dark"] .a-btn{
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.06);
-      color:var(--ink);
-    }
-    .a-btn.primary{
-      background:linear-gradient(180deg, var(--accent), var(--accent-2));
-      border:1px solid rgba(2,6,23,.14);
-      color:#0b120f;
-      box-shadow:0 14px 28px rgba(187,207,56,.22), 0 0 0 6px rgba(187,207,56,.12);
-    }
-
-    .perm-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width:520px){
-      .perm-grid{grid-template-columns:1fr}
-    }
-    .perm-item{
-      border:1px solid rgba(15,23,42,.10);
-      border-radius:14px;
-      padding:10px 10px;
-      background:rgba(255,255,255,.65);
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      font-weight:900;
-    }
-    html[data-theme="dark"] .perm-item{
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.05);
-    }
-    .perm-item input{transform:scale(1.1)}
-    .lockHint{
-      font-size:12px;
-      font-weight:900;
-      color:var(--muted);
-      padding:10px 12px;
-      border:1px dashed rgba(15,23,42,.16);
-      border-radius:14px;
-      background:rgba(255,255,255,.6);
-    }
-    html[data-theme="dark"] .lockHint{
-      border:1px dashed rgba(255,255,255,.16);
-      background:rgba(255,255,255,.04);
-    }
-
-    /* ✅ تعطيل العناصر بدون حذف */
-    .locked{
-      opacity:.45 !important;
-      filter:grayscale(.2);
-      pointer-events:none !important;
     }
   </style>
 
@@ -560,13 +443,13 @@
       <!-- أزرار داخل الهيرو -->
       <div class="hero-actions">
         <!-- زر إنشاء إعلان داخل الهيرو -->
-        <a class="hero-cta ripple-container" href="index13.html" id="ctaCreateAnn" data-perm="index13.html">
+        <a class="hero-cta ripple-container" href="index13.html" id="ctaCreateAnn">
           <span class="ms">campaign</span>
           <span>إنشاء إعلان جديد</span>
         </a>
 
         <!-- ✅ زر إدارة الحسابات -->
-        <a class="hero-ghost ripple-container" href="index14.html" id="ctaAccounts" data-perm="index14.html">
+        <a class="hero-ghost ripple-container" href="index14.html" id="ctaAccounts">
           <span class="ms">manage_accounts</span>
           <span>إدارة الحسابات</span>
         </a>
@@ -590,58 +473,58 @@
 
     <!-- شبكة الأزرار (روابط مباشرة) -->
     <section class="grid">
-      <a class="tile ripple-container" href="index2.html" data-perm="index2.html">
+      <a class="tile ripple-container" href="index2.html">
         <div class="icon"><span class="ms">account_balance_wallet</span></div>
         <div class="text"><div class="title">إيداع</div><div class="desc">تسجيل ومعاينة طلبات الإيداع</div></div>
         <div class="right"><span class="chip">جديد</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <a class="tile ripple-container" href="index3.html" data-perm="index3.html">
+      <a class="tile ripple-container" href="index3.html">
         <div class="icon"><span class="ms">payments</span></div>
         <div class="text"><div class="title">سحب</div><div class="desc">إدارة طلبات السحب واعتمادها</div></div>
         <div class="right"><span class="chip">مراجعة</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <a class="tile ripple-container" href="index4.html" data-perm="index4.html">
+      <a class="tile ripple-container" href="index4.html">
         <div class="icon"><span class="ms">sync_alt</span></div>
         <div class="text"><div class="title">تحويل</div><div class="desc">من حساب مستخدم لآخر</div></div>
         <div class="right"><span class="chip">نشط</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <a class="tile ripple-container" href="index5.html" data-perm="index5.html">
+      <a class="tile ripple-container" href="index5.html">
         <div class="icon"><span class="ms">account_tree</span></div>
         <div class="text"><div class="title">قيود التحويل</div><div class="desc">من الرصيد إلى العقد المقفل</div></div>
         <div class="right"><span class="chip">عرض</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <a class="tile ripple-container" href="index6.html" data-perm="index6.html">
+      <a class="tile ripple-container" href="index6.html">
         <div class="icon"><span class="ms">person_add</span></div>
         <div class="text"><div class="title">إنشاء حساب</div><div class="desc">إضافة مستخدم جديد للنظام</div></div>
         <div class="right"><span class="chip">إدارة</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <a class="tile ripple-container" href="index7.html" data-perm="index7.html">
+      <a class="tile ripple-container" href="index7.html">
         <div class="icon"><span class="ms">send</span></div>
         <div class="text"><div class="title">إرسال رسالة</div><div class="desc">إشعار أو تنبيه</div></div>
         <div class="right"><span class="chip">سريع</span><span class="ms">chevron_left</span></div>
       </a>
 
       <!-- عرض المستخدم (أدمن) -->
-      <a class="tile ripple-container" href="index8.html" data-perm="index8.html">
+      <a class="tile ripple-container" href="index8.html">
         <div class="icon"><span class="ms">manage_search</span></div>
         <div class="text"><div class="title">عرض المستخدم</div><div class="desc">بحث ونسخ بيانات الحساب</div></div>
         <div class="right"><span class="chip">أدمن</span><span class="ms">chevron_left</span></div>
       </a>
 
       <!-- الإيداعات: قائمة ومراجعة -->
-      <a class="tile ripple-container" href="index9.html" data-perm="index9.html">
+      <a class="tile ripple-container" href="index9.html">
         <div class="icon"><span class="ms">list_alt</span></div>
         <div class="text"><div class="title">الإيداعات</div><div class="desc">سجل الإيداعات واعتمادها</div></div>
         <div class="right"><span class="chip">سجل</span><span class="ms">chevron_left</span></div>
       </a>
 
       <!-- إنشاء حساب P2P -->
-      <a class="tile ripple-container" href="index10.html" data-perm="index10.html">
+      <a class="tile ripple-container" href="index10.html">
         <div class="icon"><span class="ms">vpn_key</span></div>
         <div class="text">
           <div class="title">إنشاء حساب P2P</div>
@@ -651,7 +534,7 @@
       </a>
 
       <!-- المقترحات والشكاوى -->
-      <a class="tile ripple-container" href="index11.html" data-perm="index11.html">
+      <a class="tile ripple-container" href="index11.html">
         <div class="icon"><span class="ms">forum</span></div>
         <div class="text">
           <div class="title">المقترحات والشكاوى</div>
@@ -660,18 +543,8 @@
         <div class="right"><span class="chip">صندوق</span><span class="ms">chevron_left</span></div>
       </a>
 
-      <!-- ✅ التقارير (مثال) -->
-      <a class="tile ripple-container" href="reports.html" data-perm="reports.html">
-        <div class="icon"><span class="ms">analytics</span></div>
-        <div class="text">
-          <div class="title">التقارير</div>
-          <div class="desc">لوحة تقارير وإحصاءات إضافية</div>
-        </div>
-        <div class="right"><span class="chip">تقارير</span><span class="ms">chevron_left</span></div>
-      </a>
-
       <!-- إنشاء إعلان -->
-      <a class="tile ripple-container" href="index13.html" id="tileCreateAnn" data-perm="index13.html">
+      <a class="tile ripple-container" href="index13.html" id="tileCreateAnn">
         <div class="icon"><span class="ms">campaign</span></div>
         <div class="text">
           <div class="title">إنشاء إعلان</div>
@@ -681,7 +554,7 @@
       </a>
 
       <!-- ✅ إدارة الحسابات -->
-      <a class="tile ripple-container" href="index14.html" id="tileAccounts" data-perm="index14.html">
+      <a class="tile ripple-container" href="index14.html" id="tileAccounts">
         <div class="icon"><span class="ms">manage_accounts</span></div>
         <div class="text">
           <div class="title">إدارة الحسابات</div>
@@ -691,7 +564,7 @@
       </a>
 
       <!-- ✅ زر توقيف الحسابات (نُقل إلى هنا) -->
-      <a class="tile ripple-container" href="index15.html" id="tileSuspend" data-perm="index15.html">
+      <a class="tile ripple-container" href="index15.html" id="tileSuspend">
         <div class="icon"><span class="ms">block</span></div>
         <div class="text">
           <div class="title">توقيف الحسابات</div>
@@ -701,7 +574,7 @@
       </a>
 
       <!-- ✅ زر المحذوفات (نُقل إلى هنا) -->
-      <a class="tile ripple-container" href="index16.html" id="tileTrash" data-perm="index16.html">
+      <a class="tile ripple-container" href="index16.html" id="tileTrash">
         <div class="icon"><span class="ms">delete_sweep</span></div>
         <div class="text">
           <div class="title">المحذوفات</div>
@@ -714,7 +587,7 @@
   </main>
 
   <!-- زر طافٍ ثابت لإنشاء إعلان -->
-  <a class="fab ripple-container" href="index13.html" id="fabCreateAnn" title="إنشاء إعلان" data-perm="index13.html">
+  <a class="fab ripple-container" href="index13.html" id="fabCreateAnn" title="إنشاء إعلان">
     <span class="ms">campaign</span>
   </a>
   <div class="fab-label">إنشاء إعلان</div>
@@ -741,86 +614,8 @@
         </div>
       </div>
 
-      <!-- ✅ إضافة الأزرار المطلوبة بدون حذف -->
       <div class="theme-foot">
         <button class="theme-btn" id="resetTheme"><span class="ms">restart_alt</span> إعادة الافتراضي</button>
-
-        <!-- ✅ زر إنشاء حساب -->
-        <button class="theme-btn" id="openCreateUser"><span class="ms">person_add</span> إنشاء حساب</button>
-
-        <!-- ✅ زر صلاحيات المستخدم -->
-        <button class="theme-btn" id="openPerms"><span class="ms">admin_panel_settings</span> صلاحيات المستخدم</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ✅ مودال إنشاء حساب -->
-  <div class="admin-modal" id="createUserModal" aria-hidden="true">
-    <div class="admin-panel" role="dialog" aria-modal="true" aria-label="إنشاء حساب جديد">
-      <div class="admin-head">
-        <div class="t">إنشاء حساب جديد</div>
-        <button class="btn" id="closeCreateUser" title="إغلاق"><span class="ms">close</span></button>
-      </div>
-
-      <div class="admin-body">
-        <div class="lockHint">سيتم حفظ المستخدم في قاعدة البيانات داخل <b>system_auth_users</b>. (نفس أسلوب صفحة تسجيل الدخول)</div>
-
-        <div class="frow">
-          <label>اسم المستخدم</label>
-          <input id="cu_username" placeholder="مثال: أحمد" />
-        </div>
-
-        <div class="frow">
-          <label>كلمة المرور</label>
-          <input id="cu_password" placeholder="****" />
-        </div>
-
-        <div class="frow">
-          <label>الدور</label>
-          <select id="cu_role">
-            <option value="user">مستخدم</option>
-            <option value="admin">مدير</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="admin-actions">
-        <button class="a-btn" id="cu_cancel"><span class="ms">close</span> إلغاء</button>
-        <button class="a-btn primary" id="cu_save"><span class="ms">save</span> حفظ المستخدم</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ✅ مودال الصلاحيات -->
-  <div class="admin-modal" id="permModal" aria-hidden="true">
-    <div class="admin-panel" role="dialog" aria-modal="true" aria-label="صلاحيات المستخدم">
-      <div class="admin-head">
-        <div class="t">صلاحيات المستخدم</div>
-        <button class="btn" id="closePerms" title="إغلاق"><span class="ms">close</span></button>
-      </div>
-
-      <div class="admin-body">
-        <div class="lockHint">
-          اختر المستخدم ثم فعّل الصفحات المسموحة له.  
-          إذا طفيت صفحة = المستخدم ما يقدر يفتحها (تتقفل هنا تلقائيًا).
-        </div>
-
-        <div class="frow">
-          <label>اختر المستخدم</label>
-          <select id="perm_user_select"></select>
-        </div>
-
-        <div class="frow">
-          <label>الصفحات المسموحة</label>
-          <div class="perm-grid" id="perm_grid">
-            <!-- سيتم تعبئته تلقائياً -->
-          </div>
-        </div>
-      </div>
-
-      <div class="admin-actions">
-        <button class="a-btn" id="perm_cancel"><span class="ms">close</span> إلغاء</button>
-        <button class="a-btn primary" id="perm_save"><span class="ms">save</span> حفظ الصلاحيات</button>
       </div>
     </div>
   </div>
@@ -1193,302 +988,6 @@
     // أول تشغيل + تحديث تلقائي
     loadAll(false);
     setInterval(()=>loadAll(false), AUTO_REFRESH_MS);
-  })();
-  </script>
-
-  <!-- ✅ إضافات الصلاحيات + إنشاء الحساب (بدون حذف أي شي) -->
-  <script>
-  (function(){
-    const AUTH_PATH = "system_auth_users";
-    const STORE_KEY = "last_username"; // من صفحة تسجيل الدخول
-    const is = (id)=>document.getElementById(id);
-
-    function toast(m){
-      const t=is("toast"); if(!t) return;
-      t.textContent=m; t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'), 1400);
-    }
-
-    // Firebase (نفس التطبيق)
-    try{
-      const db = firebase.database();
-
-      const enc = (s)=>encodeURIComponent(String(s||"").trim());
-
-      // عناصر
-      const themeModal = is("themeModal");
-
-      const createUserModal = is("createUserModal");
-      const permModal = is("permModal");
-
-      const openCreateUser = is("openCreateUser");
-      const openPerms = is("openPerms");
-
-      const closeCreateUser = is("closeCreateUser");
-      const closePerms = is("closePerms");
-
-      const cu_cancel = is("cu_cancel");
-      const cu_save = is("cu_save");
-      const cu_username = is("cu_username");
-      const cu_password = is("cu_password");
-      const cu_role = is("cu_role");
-
-      const perm_user_select = is("perm_user_select");
-      const perm_grid = is("perm_grid");
-      const perm_cancel = is("perm_cancel");
-      const perm_save = is("perm_save");
-
-      // قائمة الصفحات اللي تتحكم بها (تقدر تزود صفحاتك هنا)
-      const PERM_ITEMS = [
-        { id:"settings", label:"الإعدادات", key:"settings" },
-        { id:"reports.html", label:"التقارير", key:"reports.html" },
-        { id:"index2.html", label:"إيداع", key:"index2.html" },
-        { id:"index3.html", label:"سحب", key:"index3.html" },
-        { id:"index4.html", label:"تحويل", key:"index4.html" },
-        { id:"index5.html", label:"قيود التحويل", key:"index5.html" },
-        { id:"index6.html", label:"إنشاء حساب", key:"index6.html" },
-        { id:"index7.html", label:"إرسال رسالة", key:"index7.html" },
-        { id:"index8.html", label:"عرض المستخدم", key:"index8.html" },
-        { id:"index9.html", label:"الإيداعات", key:"index9.html" },
-        { id:"index10.html", label:"حساب P2P", key:"index10.html" },
-        { id:"index11.html", label:"الشكاوى والمقترحات", key:"index11.html" },
-        { id:"index13.html", label:"إنشاء إعلان", key:"index13.html" },
-        { id:"index14.html", label:"إدارة الحسابات", key:"index14.html" },
-        { id:"index15.html", label:"توقيف الحسابات", key:"index15.html" },
-        { id:"index16.html", label:"المحذوفات", key:"index16.html" }
-      ];
-
-      // فتح/إغلاق مودالات
-      function showModal(modal){
-        if(!modal) return;
-        modal.classList.add("show");
-        modal.setAttribute("aria-hidden","false");
-      }
-      function hideModal(modal){
-        if(!modal) return;
-        modal.classList.remove("show");
-        modal.setAttribute("aria-hidden","true");
-      }
-
-      if(openCreateUser){
-        openCreateUser.addEventListener("click", ()=>{
-          // ما نغلق الثيم (عشان لا نغيّر شي)، فقط نفتح نافذة إضافية
-          showModal(createUserModal);
-        });
-      }
-      if(openPerms){
-        openPerms.addEventListener("click", async ()=>{
-          showModal(permModal);
-          await loadUsersToSelect();
-        });
-      }
-
-      [closeCreateUser, cu_cancel].forEach(btn=>{
-        if(btn) btn.addEventListener("click", ()=>hideModal(createUserModal));
-      });
-      [closePerms, perm_cancel].forEach(btn=>{
-        if(btn) btn.addEventListener("click", ()=>hideModal(permModal));
-      });
-
-      // إغلاق بالنقر على الخلفية
-      [createUserModal, permModal].forEach(m=>{
-        if(!m) return;
-        m.addEventListener("click",(e)=>{ if(e.target === m) hideModal(m); });
-      });
-
-      // إنشاء حساب
-      if(cu_save){
-        cu_save.addEventListener("click", async ()=>{
-          const username = String(cu_username?.value||"").trim();
-          const password = String(cu_password?.value||"").trim();
-          const role = String(cu_role?.value||"user");
-
-          if(!username || !password){
-            toast("أدخل اسم المستخدم وكلمة المرور");
-            return;
-          }
-
-          const ref = db.ref(`${AUTH_PATH}/${enc(username)}`);
-          const snap = await ref.get();
-
-          if(snap.exists()){
-            toast("اسم المستخدم موجود مسبقاً");
-            return;
-          }
-
-          // افتراضياً: كل الصلاحيات ممنوحة للمستخدم الجديد؟ خليها false إلا الأساسيات
-          const permissions = {};
-          PERM_ITEMS.forEach(x=>{
-            // المستخدم الجديد: اسمح له فقط صفحات بسيطة (تقدر تغيّر)
-            permissions[x.key] = (x.key === "index2.html" || x.key === "index3.html" || x.key === "index4.html") ? true : false;
-          });
-          permissions["settings"] = false;
-
-          await ref.set({
-            username,
-            password,
-            role,
-            createdAt: Date.now(),
-            permissions
-          });
-
-          toast("تم إنشاء الحساب ✅");
-          cu_username.value = "";
-          cu_password.value = "";
-          hideModal(createUserModal);
-        });
-      }
-
-      // تحميل المستخدمين في قائمة الصلاحيات
-      async function loadUsersToSelect(){
-        if(!perm_user_select) return;
-        perm_user_select.innerHTML = "";
-        const snap = await db.ref(AUTH_PATH).get();
-        const data = snap.exists() ? snap.val() : {};
-
-        const users = Object.keys(data || {}).map(k=>{
-          const u = data[k] || {};
-          return { key:k, username: u.username || decodeURIComponent(k) || k };
-        }).sort((a,b)=> String(a.username).localeCompare(String(b.username), 'ar'));
-
-        users.forEach(u=>{
-          const opt = document.createElement("option");
-          opt.value = u.username;
-          opt.textContent = u.username;
-          perm_user_select.appendChild(opt);
-        });
-
-        // اختار المستخدم الحالي افتراضياً إن وجد
-        const current = localStorage.getItem(STORE_KEY) || "";
-        if(current){
-          const found = users.some(x=>x.username === current);
-          if(found) perm_user_select.value = current;
-        }
-
-        // جهّز شبكة الصلاحيات
-        renderPermGrid();
-        await loadPermsForSelected();
-      }
-
-      function renderPermGrid(){
-        if(!perm_grid) return;
-        perm_grid.innerHTML = "";
-        PERM_ITEMS.forEach(item=>{
-          const div = document.createElement("div");
-          div.className = "perm-item";
-          div.innerHTML = `
-            <span>${item.label}</span>
-            <input type="checkbox" data-permkey="${item.key}" />
-          `;
-          perm_grid.appendChild(div);
-        });
-      }
-
-      async function loadPermsForSelected(){
-        const username = String(perm_user_select?.value || "").trim();
-        if(!username) return;
-        const ref = db.ref(`${AUTH_PATH}/${enc(username)}`);
-        const snap = await ref.get();
-        if(!snap.exists()) return;
-
-        const user = snap.val() || {};
-        const perms = user.permissions || {};
-
-        // ضع قيم الشيك بوكس
-        perm_grid?.querySelectorAll('input[type="checkbox"][data-permkey]').forEach(cb=>{
-          const k = cb.getAttribute("data-permkey");
-          cb.checked = !!perms[k];
-        });
-
-        // settings permission مربوط بفتح زر الإعدادات
-        const settingsAllowed = perms["settings"] !== false ? true : false;
-        // ما نغير شي، فقط نخزن للعرض
-        perm_grid?.querySelectorAll('input[type="checkbox"][data-permkey="settings"]').forEach(cb=>{
-          cb.checked = !!perms["settings"];
-        });
-      }
-
-      if(perm_user_select){
-        perm_user_select.addEventListener("change", ()=>{ loadPermsForSelected(); });
-      }
-
-      // حفظ صلاحيات
-      if(perm_save){
-        perm_save.addEventListener("click", async ()=>{
-          const username = String(perm_user_select?.value || "").trim();
-          if(!username){
-            toast("اختر مستخدم");
-            return;
-          }
-
-          const perms = {};
-          perm_grid?.querySelectorAll('input[type="checkbox"][data-permkey]').forEach(cb=>{
-            const k = cb.getAttribute("data-permkey");
-            perms[k] = cb.checked;
-          });
-
-          const ref = db.ref(`${AUTH_PATH}/${enc(username)}/permissions`);
-          await ref.set(perms);
-
-          toast("تم حفظ الصلاحيات ✅");
-
-          // لو عدلت صلاحيات المستخدم الحالي، طبّق فوراً
-          const current = localStorage.getItem(STORE_KEY) || "";
-          if(current && current === username){
-            applyPermissions(perms);
-          }
-
-          hideModal(permModal);
-        });
-      }
-
-      // تطبيق الصلاحيات على نفس الصفحة
-      function applyPermissions(perms){
-        // 1) زر الإعدادات
-        const settingsBtn = is("settingsBtn");
-        if(settingsBtn){
-          // إذا settings false -> اقفل زر الإعدادات بالكامل
-          if(perms && perms["settings"] === false){
-            settingsBtn.classList.add("locked");
-            settingsBtn.title = "غير مسموح";
-          }else{
-            settingsBtn.classList.remove("locked");
-          }
-        }
-
-        // 2) كل الروابط التي فيها data-perm
-        document.querySelectorAll('[data-perm]').forEach(el=>{
-          const key = el.getAttribute("data-perm");
-          if(!key) return;
-          const allowed = (perms && (perms[key] === true));
-          // إن لم يتم تعريف المفتاح -> نخليه مسموح
-          if(perms && (key in perms)){
-            if(!allowed) el.classList.add("locked");
-            else el.classList.remove("locked");
-          }
-        });
-      }
-
-      // تحميل صلاحيات المستخدم الحالي عند فتح الصفحة
-      (async function bootPerms(){
-        const current = localStorage.getItem(STORE_KEY) || "";
-        if(!current) return; // إذا ما فيه اسم مستخدم محفوظ، ما نطبّق قيود
-        try{
-          const ref = db.ref(`${AUTH_PATH}/${enc(current)}`);
-          const snap = await ref.get();
-          if(!snap.exists()) return;
-          const u = snap.val() || {};
-          const perms = u.permissions || null;
-          if(perms) applyPermissions(perms);
-        }catch(e){
-          // ما نوقف الصفحة
-          console.error(e);
-        }
-      })();
-
-    }catch(e){
-      console.error(e);
-    }
   })();
   </script>
 
