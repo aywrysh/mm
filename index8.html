@@ -57,6 +57,15 @@
     .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
     .share{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
 
+    /* (جديد) صندوق ربط P2P + قائمة الحسابات */
+    .p2pbox{margin-top:12px; border:1px dashed #d7dbdf; border-radius:14px; padding:12px; background:#fff}
+    .p2p-title{font-weight:900; margin:0 0 8px 0}
+    .p2p-form{display:grid; gap:10px; grid-template-columns:1fr 1fr 140px}
+    @media (max-width:640px){ .p2p-form{grid-template-columns:1fr} }
+    .p2p-list{margin-top:10px; display:none; border:1px dashed #d7dbdf; border-radius:14px; padding:10px; background:#fafafa}
+    .p2p-row{display:grid; grid-template-columns:1fr 1fr 1fr 90px; gap:8px; align-items:center; padding:8px; border-bottom:1px solid #edf0f3}
+    .p2p-row:last-child{border-bottom:none}
+
     /* توست صغير أسود */
     .toast{
       position:fixed; bottom:22px; left:50%; transform:translateX(-50%) scale(.96);
@@ -65,10 +74,9 @@
     }
     .toast.show{opacity:1; transform:translateX(-50%) scale(1)}
   </style>
-  
-   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#BBCF38">
-  
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#BBCF38">
 </head>
 <body>
   <header class="topbar">
@@ -116,10 +124,37 @@
           <div class="k">العقد المقفل</div><div id="r_locked" class="mono"></div>
           <div class="k">التسجيل</div><div id="r_created" class="mono"></div>
         </div>
+
         <div class="share">
           <button class="btn-solid" id="copyBtn" type="button">نسخ</button>
           <a class="btn-solid" id="waBtn" target="_blank" rel="noopener">ارسال واتساب</a>
           <a class="btn-solid" id="tgBtn" target="_blank" rel="noopener">ارسال تيليجرام</a>
+        </div>
+
+        <!-- (جديد) ربط حسابات P2P + عرضها -->
+        <div class="p2pbox" id="p2pBox">
+          <p class="p2p-title">حسابات P2P المرتبطة بهذا المستخدم</p>
+
+          <div class="p2p-form">
+            <div class="field" style="gap:6px">
+              <div class="label">اسم مستخدم P2P</div>
+              <input id="p2pUser" class="input" type="text" placeholder="مثال: trader_01">
+            </div>
+            <div class="field" style="gap:6px">
+              <div class="label">كلمة مرور P2P</div>
+              <input id="p2pPass" class="input" type="text" placeholder="مثال: 123456">
+            </div>
+            <div style="display:flex; gap:8px; align-items:end;">
+              <button class="btn-solid primary" id="p2pSaveBtn" type="button">حفظ</button>
+            </div>
+          </div>
+
+          <div class="p2p-list" id="p2pList">
+            <div class="p2p-row" style="font-weight:900;background:#fff;border-radius:10px">
+              <div>اسم المستخدم</div><div>كلمة المرور</div><div>التسجيل</div><div>إجراء</div>
+            </div>
+            <div id="p2pRows"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -148,10 +183,23 @@
 
     $("#backBtn").addEventListener('click', ()=>{ history.length>1 ? history.back() : location.href='index1.html'; });
     $("#resetBtn").addEventListener('click', ()=>{
-      $("#fullName").value=''; $("#listBox").style.display='none'; $("#resultBox").style.display='none';
+      $("#fullName").value='';
+      $("#listBox").style.display='none';
+      $("#resultBox").style.display='none';
+      $("#p2pUser").value='';
+      $("#p2pPass").value='';
+      $("#p2pList").style.display='none';
+      $("#p2pRows").innerHTML='';
     });
     $("#searchBtn").addEventListener('click', search);
     $("#fullName").addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); search(); } });
+
+    // ===== (جديد) مسار ربط P2P =====
+    // سيتم الحفظ تحت: p2p_links/<accountId>/<pushId> {p2pUsername, p2pPassword, createdAt}
+    const P2P_LINKS_PATH = 'p2p_links';
+
+    // ===== (جديد) متغيّر للحساب الحالي المعروض =====
+    let currentUserForP2P = null; // { accountId, phone, name, username, password, ... }
 
     // جلب حسب الاسم (قد يرجع أكثر من صف)
     async function fetchByName(name){
@@ -178,8 +226,120 @@
       }
     }
 
+    // ===== (جديد) تحميل روابط P2P لهذا accountId =====
+    async function loadP2PLinks(accountId){
+      const acc = String(accountId||'').trim();
+      if(!acc) return [];
+      try{
+        const snap = await db.ref(`${P2P_LINKS_PATH}/${acc}`).get();
+        if(!snap.exists()) return [];
+        const obj = snap.val() || {};
+        return Object.entries(obj).map(([id,v])=> ({...(v||{}), _id:id}));
+      }catch(e){
+        console.warn('loadP2PLinks failed', e?.message||e);
+        return [];
+      }
+    }
+
+    // ===== (جديد) رسم قائمة P2P تحت الحساب =====
+    function renderP2PList(items){
+      const list = $("#p2pList");
+      const host = $("#p2pRows");
+      host.innerHTML = '';
+
+      if(!items || !items.length){
+        list.style.display = 'none';
+        return;
+      }
+
+      items
+        .sort((a,b)=> Number(b.createdAt||0) - Number(a.createdAt||0))
+        .forEach(it=>{
+          const row = document.createElement('div');
+          row.className = 'p2p-row';
+          const created = it.createdAt ? new Date(it.createdAt).toLocaleString() : '—';
+          row.innerHTML = `
+            <div class="mono">${it.p2pUsername || '—'}</div>
+            <div class="mono">${it.p2pPassword || '—'}</div>
+            <div class="mono">${created}</div>
+            <div><button class="btn-solid" data-del="${it._id}">حذف</button></div>
+          `;
+          host.appendChild(row);
+        });
+
+      list.style.display = 'block';
+
+      // زر حذف (اختياري)
+      host.querySelectorAll('button[data-del]').forEach(b=>{
+        b.addEventListener('click', async ()=>{
+          if(!currentUserForP2P || !currentUserForP2P.accountId) return;
+          const acc = String(currentUserForP2P.accountId||'').trim();
+          const id  = b.dataset.del;
+          if(!acc || !id) return;
+          try{
+            await db.ref(`${P2P_LINKS_PATH}/${acc}/${id}`).remove();
+            toast('تم الحذف');
+            const items2 = await loadP2PLinks(acc);
+            renderP2PList(items2);
+            // تحديث أزرار النسخ بعد التغيير
+            updateShareForCurrent();
+          }catch(e){
+            console.error(e);
+            toast('تعذّر الحذف');
+          }
+        });
+      });
+    }
+
+    // ===== (جديد) بناء نص الرسالة مع P2P =====
+    async function buildShareText(u){
+      const base =
+`تم إنشاء حسابك في Dynex ✅
+
+الاسم: ${u.name || '—'}
+اسم المستخدم: ${u.username || '—'}
+رقم الحساب: ${u.accountId || '—'}
+رقم الهاتف: ${u.phone || '—'}
+رمز الدعوة: ${u.inviteCode || '—'}
+كلمة المرور: ${u.password || '—'}`;
+
+      const links = await loadP2PLinks(u.accountId);
+      if(!links.length) return { text: base, links };
+
+      const tail = links
+        .sort((a,b)=> Number(b.createdAt||0) - Number(a.createdAt||0))
+        .map((it,i)=> `(${i+1}) ${it.p2pUsername || '—'} / ${it.p2pPassword || '—'}`)
+        .join('\n');
+
+      const text = base + `
+
+حسابات P2P المرتبطة:
+${tail}`;
+
+      return { text, links };
+    }
+
+    // ===== (جديد) تحديث أزرار النسخ/واتساب/تيليجرام للحساب الحالي =====
+    async function updateShareForCurrent(){
+      if(!currentUserForP2P) return;
+      const u = currentUserForP2P;
+
+      const { text, links } = await buildShareText(u);
+
+      $("#copyBtn").onclick = async ()=>{
+        try{ await navigator.clipboard.writeText(text); toast('تم النسخ'); }catch{ toast('تعذّر النسخ'); }
+      };
+      $("#waBtn").href = 'https://wa.me/?text=' + encodeURIComponent(text);
+      $("#tgBtn").href = 'https://t.me/share/url?url=' + encodeURIComponent(location.origin) + '&text=' + encodeURIComponent(text);
+
+      // عرض روابط P2P تحت الحساب
+      renderP2PList(links);
+    }
+
     // رسم صف واحد بالنتيجة التفصيلية
     function renderDetail(u){
+      currentUserForP2P = u;
+
       $("#resultBox").style.display = 'block';
       $("#r_name").textContent      = u.name || '—';
       $("#r_username").textContent  = u.username || '—';
@@ -191,22 +351,12 @@
       $("#r_locked").textContent    = (u.lockedAmount ?? 0);
       $("#r_created").textContent   = u.createdAt ? new Date(u.createdAt).toLocaleString() : '—';
 
-      // نص المشاركة
-      const shareText =
-`تم إنشاء حسابك في Dynex ✅
+      // (جديد) تحديث الرسالة + تحميل حسابات P2P
+      updateShareForCurrent();
 
-الاسم: ${u.name || '—'}
-اسم المستخدم: ${u.username || '—'}
-رقم الحساب: ${u.accountId || '—'}
-رقم الهاتف: ${u.phone || '—'}
-رمز الدعوة: ${u.inviteCode || '—'}
-كلمة المرور: ${u.password || '—'}`;
-
-      $("#copyBtn").onclick = async ()=>{
-        try{ await navigator.clipboard.writeText(shareText); toast('تم النسخ'); }catch{ toast('تعذّر النسخ'); }
-      };
-      $("#waBtn").href = 'https://wa.me/?text=' + encodeURIComponent(shareText);
-      $("#tgBtn").href = 'https://t.me/share/url?url=' + encodeURIComponent(location.origin) + '&text=' + encodeURIComponent(shareText);
+      // (جديد) تفريغ مدخلات P2P
+      $("#p2pUser").value = '';
+      $("#p2pPass").value = '';
     }
 
     // رسم قائمة مختصرة عندما توجد نتائج متعددة
@@ -238,6 +388,49 @@
       });
     }
 
+    // ===== (جديد) حفظ ربط P2P للحساب الحالي =====
+    $("#p2pSaveBtn").addEventListener('click', async ()=>{
+      if(!currentUserForP2P || !currentUserForP2P.accountId){
+        toast('افتح حساب أولاً');
+        return;
+      }
+      const acc = String(currentUserForP2P.accountId||'').trim();
+      if(!acc){
+        toast('رقم الحساب غير موجود');
+        return;
+      }
+
+      const p2pUsername = String($("#p2pUser").value||'').trim();
+      const p2pPassword = String($("#p2pPass").value||'').trim();
+      if(!p2pUsername || !p2pPassword){
+        toast('أدخل بيانات P2P');
+        return;
+      }
+
+      try{
+        const ref = db.ref(`${P2P_LINKS_PATH}/${acc}`).push();
+        await ref.set({
+          p2pUsername,
+          p2pPassword,
+          createdAt: Date.now(),
+          // (اختياري) معلومات مساعدة بدون ما نغير شيء بالواجهة
+          user_accountId: acc,
+          user_phone: currentUserForP2P.phone || null,
+          user_name: currentUserForP2P.name || null
+        });
+
+        toast('تم الحفظ ✅');
+        $("#p2pUser").value = '';
+        $("#p2pPass").value = '';
+
+        // إعادة تحميل القائمة وتحديث النص
+        await updateShareForCurrent();
+      }catch(e){
+        console.error(e);
+        toast('تعذّر الحفظ');
+      }
+    });
+
     async function search(){
       const name = $("#fullName").value.trim();
       if(!name){ $("#fullName").classList.add('error'); toast('أدخل الاسم الرباعي'); return; }
@@ -245,6 +438,8 @@
 
       $("#listBox").style.display='none';
       $("#resultBox").style.display='none';
+      $("#p2pList").style.display='none';
+      $("#p2pRows").innerHTML='';
 
       $("#searchBtn").disabled = true;
       const prev = $("#searchBtn").textContent;
@@ -272,14 +467,13 @@
       }
     }
   </script>
-  
+
   <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .then(reg => console.log("✔ Service Worker registered"))
-      .catch(err => console.error("❌ Service Worker failed:", err));
-  }
-</script>
-  
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(reg => console.log("✔ Service Worker registered"))
+        .catch(err => console.error("❌ Service Worker failed:", err));
+    }
+  </script>
 </body>
 </html>
