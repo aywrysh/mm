@@ -114,7 +114,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-  <script>
+<script>
   (function(){
     const $ = s=>document.querySelector(s);
 
@@ -153,6 +153,22 @@
       live.lastChild.textContent = ok ? 'متصل' : 'غير متصل';
     }
 
+    // ✅ جديد: إرسال رسالة عملية للمستخدم في inbox
+    async function sendTxMsg(uid, txType, status, amount){
+      try{
+        const p = db.ref('user_inbox/' + uid).push();
+        await p.set({
+          kind: 'tx',                 // تمييزها كرسالة عملية
+          txType: txType,             // deposit | withdraw
+          status: status,             // approved | rejected
+          amount: Number(amount||0),
+          currency: 'USDT',
+          createdAt: Date.now(),      // للأنظمة القديمة
+          createdAtMs: Date.now()     // واضح للفرونت
+        });
+      }catch(_){}
+    }
+
     const userCache = new Map();
     async function getUserName(uid){
       if(userCache.has(uid)) return userCache.get(uid);
@@ -188,7 +204,8 @@
         memo: v.memo || '',
         status: v.status || 'pending',
         tsISO: ts ? new Date(ts).toISOString() : '',
-        tsLocal: ts ? new Date(ts).toLocaleString() : '-'
+        // ✅ EN date
+        tsLocal: ts ? new Date(ts).toLocaleString('en-US',{hour12:false}) : '-'
       };
     }
 
@@ -206,7 +223,8 @@
         address: v.address || v.addr || '—',
         status: v.status || 'pending',
         tsISO: ts ? new Date(ts).toISOString() : '',
-        tsLocal: ts ? new Date(ts).toLocaleString() : '-'
+        // ✅ EN date
+        tsLocal: ts ? new Date(ts).toLocaleString('en-US',{hour12:false}) : '-'
       };
     }
 
@@ -343,9 +361,15 @@
                 const newBalance = currentBalance + amountToAdd;
                 await userRef.update({ balance: newBalance.toFixed(2) });
                 toast(`تم تأكيد الإيداع وإضافة ${amountToAdd} إلى رصيد المستخدم`);
+
+                // ✅ جديد: رسالة للمستخدم
+                await sendTxMsg(x.uid, 'deposit', 'approved', amountToAdd);
               }
             }else{
               toast('تم تأكيد الإيداع بدون إضافة رصيد');
+
+              // ✅ جديد: رسالة للمستخدم
+              await sendTxMsg(x.uid, 'deposit', 'approved', 0);
             }
           }catch(e){
             console.error(e); toast('تعذّر التأكيد'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
@@ -363,20 +387,30 @@
               reason: 'رفض بواسطة الأدمن'
             });
             toast('تم رفض الإيداع');
+
+            // ✅ جديد: رسالة للمستخدم
+            await sendTxMsg(x.uid, 'deposit', 'rejected', 0);
           }catch(e){
             console.error(e); toast('تعذّر الرفض'); d.querySelectorAll('[data-act]').forEach(b=>b.removeAttribute('disabled'));
           }
         });
       } else {
+
+        // ✅✅✅ (إصلاح السحوبات) إرسال رسالة قبل الحذف + تثبيت المبلغ
         d.querySelector('[data-act="approve"]')?.addEventListener('click', async ()=>{
-          if(!confirm(`اعتماد سحب ${fmt(x.amount)} USDT للمستخدم ${x.name}؟\n\nسيتم خصم المبلغ من رصيده.`)) return;
+          const amountFixed = Number(x.amount || 0);
+
+          if(!confirm(`اعتماد سحب ${fmt(amountFixed)} USDT للمستخدم ${x.name}؟\n\nسيتم خصم المبلغ من رصيده.`)) return;
           d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
           try{
             const wRef = db.ref(`withdrawals/${x.uid}/${x.id}`);
             const currRef = db.ref(`withdrawals/${x.uid}/current`);
             
             await wRef.update({ status:'approved', approvedAt: Date.now() });
-            
+
+            // ✅ جديد: رسالة للمستخدم (قبل الحذف)
+            await sendTxMsg(x.uid, 'withdraw', 'approved', amountFixed);
+
             const curr = (await currRef.get()).val();
             if(curr === x.id) await currRef.set(null);
             
@@ -388,7 +422,9 @@
         });
 
         d.querySelector('[data-act="reject"]')?.addEventListener('click', async ()=>{
-          if(!confirm(`إلغاء سحب ${fmt(x.amount)} USDT وإرجاع المبلغ إلى ${x.name}؟`)) return;
+          const amountFixed = Number(x.amount || 0);
+
+          if(!confirm(`إلغاء سحب ${fmt(amountFixed)} USDT وإرجاع المبلغ إلى ${x.name}؟`)) return;
           d.querySelectorAll('[data-act]').forEach(b=>b.setAttribute('disabled','true'));
           try{
             const userRef = db.ref(`users/${x.uid}`);
@@ -398,11 +434,14 @@
             await userRef.transaction(cur=>{
               if(!cur) return cur;
               const bal = Number(cur.balance||0);
-              const nb = +(bal + Number(x.amount||0)).toFixed(2);
+              const nb = +(bal + amountFixed).toFixed(2);
               return { ...cur, balance: nb };
             });
 
             await wRef.update({ status:'rejected', rejectedAt: Date.now() });
+
+            // ✅ جديد: رسالة للمستخدم (قبل الحذف)
+            await sendTxMsg(x.uid, 'withdraw', 'rejected', amountFixed);
 
             const curr = (await currRef.get()).val();
             if(curr === x.id) await currRef.set(null);
@@ -492,133 +531,4 @@
     startListeners();
 
   })();
-  </script>
-  
-  <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .then(reg => console.log("✔ Service Worker registered"))
-      .catch(err => console.error("❌ Service Worker failed:", err));
-  }
-  </script>
-  
-  <script>
-  (function () {
-    if (!window.firebase || !firebase.database) return;
-
-    async function ensureNotifyPermission() {
-      try {
-        if (!('Notification' in window)) return false;
-        if (Notification.permission === 'granted') return true;
-        if (Notification.permission === 'denied') return false;
-        const perm = await Notification.requestPermission();
-        return perm === 'granted';
-      } catch (_) { return false; }
-    }
-
-    function showDesktop(title, body, data) {
-      try {
-        if (!('Notification' in window)) return;
-        if (Notification.permission !== 'granted') return;
-        const n = new Notification(title || 'إشعار', {
-          body: body || '',
-          icon: '/icon-192.png',
-          badge: '/icon-72.png',
-          tag: (data && data.tag) || 'dynex-msg',
-          renotify: false
-        });
-        n.onclick = (e) => {
-          e.preventDefault();
-          window.focus();
-          n.close();
-        };
-        setTimeout(()=>n.close(), 8000);
-      } catch(_) {}
-    }
-
-    let snd = document.getElementById('msgSnd');
-    if (!snd) {
-      snd = document.createElement('audio');
-      snd.id = 'msgSnd';
-      snd.preload = 'auto';
-      snd.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAA';
-      document.body.appendChild(snd);
-    }
-
-    let UID = null;
-    try {
-      const s = JSON.parse(localStorage.getItem('dynex_session') || 'null');
-      UID = s && s.uid;
-    } catch(_) {}
-
-    const db = firebase.database();
-    const refPublic  = db.ref('company/messages');
-    const refPrivate = UID ? db.ref('user_inbox/' + UID) : null;
-
-    const LS_PUB  = 'notif_last_company';
-    const LS_PRIV = 'notif_last_inbox';
-    const getSeen = (k)=> localStorage.getItem(k) || '';
-    const setSeen = (k,v)=> localStorage.setItem(k, v || '');
-
-    const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
-    function pushIdToTime(id){
-      if(!id) return 0;
-      let ts=0;
-      for(let i=0;i<8;i++){ ts = ts*64 + PUSH_CHARS.indexOf(id.charAt(i)); }
-      return ts;
-    }
-
-    function makeNotifPayload(lastObj){
-      const title = (lastObj.title || 'رسالة جديدة').trim();
-      const body  = String(lastObj.body || lastObj.text || '').trim();
-      return { title, body };
-    }
-
-    async function checkLatestOnce(ref, storeKey, tag) {
-      try {
-        const snap = await ref.limitToLast(1).get();
-        if (!snap.exists()) return false;
-        let lastKey = '', lastObj = null;
-        snap.forEach(ch => { lastKey = ch.key; lastObj = ch.val() || {}; });
-
-        const seen = getSeen(storeKey);
-        const hasNew = lastKey && lastKey !== seen;
-
-        if (hasNew) setSeen(storeKey, lastKey);
-
-        if (hasNew && document.hidden) {
-          const ok = await ensureNotifyPermission();
-          if (ok) {
-            const { title, body } = makeNotifPayload(lastObj);
-            showDesktop(title, body, { tag });
-          }
-          try { snd.currentTime = 0; snd.play().catch(()=>{}); } catch(_) {}
-        }
-
-        return hasNew;
-      } catch(_) { return false; }
-    }
-
-    async function pollAll() {
-      try {
-        await checkLatestOnce(refPublic, LS_PUB,  'company');
-        if (refPrivate) await checkLatestOnce(refPrivate, LS_PRIV, 'inbox');
-      } catch(_) {}
-    }
-
-    refPublic.limitToLast(1).on('value', pollAll);
-    if (refPrivate) refPrivate.limitToLast(1).on('value', pollAll);
-
-    setInterval(pollAll, 5000);
-
-    ensureNotifyPermission();
-
-    document.getElementById('messagesBtn')?.addEventListener('click', ()=>{
-      refPublic.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PUB, ch.key)));
-      if (refPrivate) refPrivate.limitToLast(1).get().then(s=>s.forEach(ch=>setSeen(LS_PRIV, ch.key)));
-    });
-  })();
-  </script>
-  
-</body>
-</html>
+</script>
